@@ -25,6 +25,12 @@ See the [rename record](../docs/operations/usapeek-rename-2026-10-05.md).
 Only API declares `pnpm db:migrate` before deployment. Worker shares the database
 and backend build but has no public domain declared.
 
+The root `railpack.json` adds `.pnpmfile.mjs` and `patches/**` to the dependency
+installation layer for all five application builds. Railpack normally copies
+only dependency manifests into that layer; pnpm's frozen lockfile also requires
+the hook and the versioned patches before installation. The default install
+commands and frozen-lockfile validation remain enabled.
+
 Railway terminates TLS at its public edge and redirects HTTP to HTTPS before
 requests reach the services, including static resources and callbacks. The
 three frontend Next.js configurations add
