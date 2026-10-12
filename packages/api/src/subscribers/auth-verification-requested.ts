@@ -1,5 +1,6 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
-import { MedusaError, Modules } from "@medusajs/framework/utils";
+import { MedusaError } from "@medusajs/framework/utils";
+import { authNotificationKey, deliverEmailNotification } from "../lib/deliver-email-notification";
 
 import {
   buildAuthEmailUrl,
@@ -43,15 +44,19 @@ export default async function authVerificationRequestedHandler({
     );
   }
 
-  const notificationService = container.resolve(Modules.NOTIFICATION);
-  await notificationService.createNotifications({
+  const deliveryUrl = new URL(verificationUrl);
+  if (actor === "customer" && data.metadata?.vendor_onboarding === true) {
+    deliveryUrl.searchParams.set("next", "/account/sell");
+  }
+  await deliverEmailNotification(container, {
     to: data.entity_id,
     from: emailConfig.from,
     channel: "email",
     template: "auth-email-verification",
     trigger_type: "auth.verification_requested",
+    idempotency_key: authNotificationKey("email-verification", actor, data.entity_id, data.code),
     data: {
-      verification_url: verificationUrl,
+      verification_url: deliveryUrl.toString(),
       expires_at: data.expires_at,
     },
   });

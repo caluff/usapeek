@@ -93,23 +93,28 @@ export function getCatalogContentStatus(
 }
 
 export function withTimeout<T>(
-  operation: Promise<T>,
+  operation: (signal: AbortSignal) => Promise<T>,
   timeoutMs: number,
 ): Promise<T> {
+  const controller = new AbortController()
   return new Promise<T>((resolve, reject) => {
     const timeout = setTimeout(() => {
-      reject(new StorefrontTimeoutError())
+      const error = new StorefrontTimeoutError()
+      controller.abort(error)
+      reject(error)
     }, timeoutMs)
 
-    operation.then(
-      (value) => {
-        clearTimeout(timeout)
-        resolve(value)
-      },
-      (error: unknown) => {
-        clearTimeout(timeout)
-        reject(error)
-      },
-    )
+    Promise.resolve()
+      .then(() => operation(controller.signal))
+      .then(
+        (value) => {
+          clearTimeout(timeout)
+          resolve(value)
+        },
+        (error: unknown) => {
+          clearTimeout(timeout)
+          reject(error)
+        },
+      )
   })
 }

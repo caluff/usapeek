@@ -1,0 +1,570 @@
+{
+  "from": "2026-09-08T20:32:00.674Z",
+  "to": "2026-09-08T20:32:25.211Z",
+  "businessCalls": 85,
+  "businessExecMs": 6.120281000000026,
+  "delta": [
+    {
+      "id": "6322472324595334155",
+      "calls": 1,
+      "exec_ms": 0.079793,
+      "operation": "SELECT",
+      "tables": [
+        "cart_line_item"
+      ]
+    },
+    {
+      "id": "1286603489507630901",
+      "calls": 3,
+      "exec_ms": 0.5028389999999998,
+      "operation": "SELECT",
+      "tables": [
+        "cart_line_item_adjustment"
+      ]
+    },
+    {
+      "id": "122121306806775519",
+      "calls": 2,
+      "exec_ms": 0.09256399999999942,
+      "operation": "SELECT",
+      "tables": [
+        "cart_payment_collection"
+      ]
+    },
+    {
+      "id": "-2836742934530549735",
+      "calls": 3,
+      "exec_ms": 0.07923299999999855,
+      "operation": "SELECT",
+      "tables": [
+        "product_shipping_profile"
+      ]
+    },
+    {
+      "id": "-378063347577672241",
+      "calls": 3,
+      "exec_ms": 0.1243540000000003,
+      "operation": "SELECT",
+      "tables": [
+        "cart_line_item_tax_line"
+      ]
+    },
+    {
+      "id": "752375239713093107",
+      "calls": 9,
+      "exec_ms": 0.2804599999999482,
+      "operation": "SELECT",
+      "tables": [
+        "workflow_execution"
+      ]
+    },
+    {
+      "id": "-2835399305386018931",
+      "calls": 1,
+      "exec_ms": 0.001970999999999279,
+      "operation": "COMMIT",
+      "tables": []
+    },
+    {
+      "id": "203722301707606767",
+      "calls": 1,
+      "exec_ms": 0.017891000000000545,
+      "operation": "SELECT",
+      "tables": [
+        "promotion_application_method",
+        "application_method_target_rules",
+        "promotion",
+        "application_method_buy_rules",
+        "promotion_promotion_rule"
+      ]
+    },
+    {
+      "id": "-32465865009214762",
+      "calls": 1,
+      "exec_ms": 0.027781000000000056,
+      "operation": "SELECT",
+      "tables": [
+        "offer"
+      ]
+    },
+    {
+      "id": "-4557140379478519100",
+      "calls": 1,
+      "exec_ms": 0.029960999999999238,
+      "operation": "SELECT",
+      "tables": [
+        "product_variant"
+      ]
+    },
+    {
+      "id": "4040799476116007000",
+      "calls": 1,
+      "exec_ms": 0.03127100000000027,
+      "operation": "SELECT",
+      "tables": [
+        "offer_inventory_item"
+      ]
+    },
+    {
+      "id": "-5230899199870570705",
+      "calls": 1,
+      "exec_ms": 0.054232000000000724,
+      "operation": "SELECT",
+      "tables": [
+        "product_variant",
+        "product_type",
+        "product",
+        "product_collection"
+      ]
+    },
+    {
+      "id": "-2406028901315559658",
+      "calls": 2,
+      "exec_ms": 0.02229100000000006,
+      "operation": "SELECT",
+      "tables": [
+        "product_tag",
+        "product_tags"
+      ]
+    },
+    {
+      "id": "-5959800272865681451",
+      "calls": 1,
+      "exec_ms": 0.033120999999999956,
+      "operation": "SELECT",
+      "tables": [
+        "cart_line_item"
+      ]
+    },
+    {
+      "id": "-4814442054205553866",
+      "calls": 1,
+      "exec_ms": 0.023741000000000012,
+      "operation": "SELECT",
+      "tables": [
+        "offer"
+      ]
+    },
+    {
+      "id": "-8588238103546230463",
+      "calls": 2,
+      "exec_ms": 0.08524300000000018,
+      "operation": "SELECT",
+      "tables": [
+        "region"
+      ]
+    },
+    {
+      "id": "-8078213937570529270",
+      "calls": 1,
+      "exec_ms": 0.035531000000000035,
+      "operation": "SELECT",
+      "tables": [
+        "cart_line_item"
+      ]
+    },
+    {
+      "id": "-4697430673438475143",
+      "calls": 1,
+      "exec_ms": 0.02441100000000007,
+      "operation": "SELECT",
+      "tables": [
+        "inventory_item"
+      ]
+    },
+    {
+      "id": "-7922997972977806732",
+      "calls": 3,
+      "exec_ms": 0.026160999999999657,
+      "operation": "SELECT",
+      "tables": [
+        "cart_promotion"
+      ]
+    },
+    {
+      "id": "3048356967144947193",
+      "calls": 1,
+      "exec_ms": 0.05336199999999991,
+      "operation": "SELECT",
+      "tables": [
+        "customer_group",
+        "customer_group_customer"
+      ]
+    },
+    {
+      "id": "-2014853950230402459",
+      "calls": 2,
+      "exec_ms": 0.2140379999999995,
+      "operation": "SELECT",
+      "tables": [
+        "product_variant",
+        "product"
+      ]
+    },
+    {
+      "id": "3393632725691790249",
+      "calls": 2,
+      "exec_ms": 0.35473300000012387,
+      "operation": "SELECT",
+      "tables": [
+        "pgbouncer"
+      ]
+    },
+    {
+      "id": "-7837824548213068631",
+      "calls": 2,
+      "exec_ms": 0.04407199999999989,
+      "operation": "SELECT",
+      "tables": [
+        "offer"
+      ]
+    },
+    {
+      "id": "4144062816349193154",
+      "calls": 1,
+      "exec_ms": 0.03822100000000006,
+      "operation": "SELECT",
+      "tables": [
+        "inventory_level"
+      ]
+    },
+    {
+      "id": "-5868253346428423502",
+      "calls": 1,
+      "exec_ms": 0.008361000000000007,
+      "operation": "SELECT",
+      "tables": [
+        "product_variant_inventory_item"
+      ]
+    },
+    {
+      "id": "-7492990847134569522",
+      "calls": 1,
+      "exec_ms": 0.06926199999999838,
+      "operation": "SELECT",
+      "tables": [
+        "price_preference"
+      ]
+    },
+    {
+      "id": "-3697199733738510317",
+      "calls": 1,
+      "exec_ms": 0.029281000000001,
+      "operation": "SELECT",
+      "tables": [
+        "customer"
+      ]
+    },
+    {
+      "id": "-7747090394844789379",
+      "calls": 1,
+      "exec_ms": 0.024780999999990172,
+      "operation": "SELECT",
+      "tables": [
+        "publishable_api_key_sales_channel"
+      ]
+    },
+    {
+      "id": "-5914322608399003900",
+      "calls": 3,
+      "exec_ms": 0.09156399999999998,
+      "operation": "SELECT",
+      "tables": [
+        "cart"
+      ]
+    },
+    {
+      "id": "11701968915743190",
+      "calls": 1,
+      "exec_ms": 0.0013399999999990087,
+      "operation": "BEGIN",
+      "tables": []
+    },
+    {
+      "id": "3336257803627603026",
+      "calls": 1,
+      "exec_ms": 0.03463100000000097,
+      "operation": "SELECT",
+      "tables": [
+        "stock_location"
+      ]
+    },
+    {
+      "id": "-55663640621269588",
+      "calls": 1,
+      "exec_ms": 0.04328200000003335,
+      "operation": "SELECT",
+      "tables": [
+        "api_key"
+      ]
+    },
+    {
+      "id": "7465662211383560676",
+      "calls": 2,
+      "exec_ms": 0.08543300000000187,
+      "operation": "SELECT",
+      "tables": [
+        "product_category_product",
+        "product_category"
+      ]
+    },
+    {
+      "id": "-98492367617614955",
+      "calls": 1,
+      "exec_ms": 0.09270399999999945,
+      "operation": "SELECT",
+      "tables": [
+        "sales_channel_stock_location"
+      ]
+    },
+    {
+      "id": "627916174294072145",
+      "calls": 1,
+      "exec_ms": 0.03751099999999852,
+      "operation": "SELECT",
+      "tables": [
+        "price_set"
+      ]
+    },
+    {
+      "id": "-5053125259405258280",
+      "calls": 1,
+      "exec_ms": 0.020450999999999997,
+      "operation": "SELECT",
+      "tables": [
+        "promotion_rule"
+      ]
+    },
+    {
+      "id": "1908740108788423989",
+      "calls": 1,
+      "exec_ms": 0.040021000000000306,
+      "operation": "SELECT",
+      "tables": [
+        "inventory_level"
+      ]
+    },
+    {
+      "id": "-7785751821267762728",
+      "calls": 3,
+      "exec_ms": 0.09643299999999932,
+      "operation": "SELECT",
+      "tables": [
+        "shipping_profile"
+      ]
+    },
+    {
+      "id": "-8515073200708513966",
+      "calls": 1,
+      "exec_ms": 0.05456199999999978,
+      "operation": "SELECT",
+      "tables": [
+        "price_rule",
+        "price",
+        "price_list",
+        "LATERAL",
+        "price_list_rule"
+      ]
+    },
+    {
+      "id": "8010888176801168362",
+      "calls": 1,
+      "exec_ms": 0.05957199999999996,
+      "operation": "SELECT",
+      "tables": [
+        "cart_line_item"
+      ]
+    },
+    {
+      "id": "-1095925979366052188",
+      "calls": 3,
+      "exec_ms": 0.030780999999999725,
+      "operation": "SELECT",
+      "tables": [
+        "credit_line"
+      ]
+    },
+    {
+      "id": "-5885516460047446375",
+      "calls": 2,
+      "exec_ms": 0.053891999999999385,
+      "operation": "SELECT",
+      "tables": [
+        "product"
+      ]
+    },
+    {
+      "id": "8610436843467264535",
+      "calls": 2,
+      "exec_ms": 0.08026299999999997,
+      "operation": "SELECT",
+      "tables": [
+        "customer"
+      ]
+    },
+    {
+      "id": "5541624110737886994",
+      "calls": 3,
+      "exec_ms": 0.3066220000000044,
+      "operation": "SELECT",
+      "tables": [
+        "cart_line_item"
+      ]
+    },
+    {
+      "id": "-2564081355749143406",
+      "calls": 1,
+      "exec_ms": 0.02489100000000022,
+      "operation": "SELECT",
+      "tables": [
+        "inventory_item"
+      ]
+    },
+    {
+      "id": "-2624024390195623474",
+      "calls": 2,
+      "exec_ms": 0.14104499999999986,
+      "operation": "SELECT",
+      "tables": [
+        "customer_group",
+        "customer_group_customer"
+      ]
+    },
+    {
+      "id": "3060088707811642844",
+      "calls": 1,
+      "exec_ms": 0.03187099999999887,
+      "operation": "SELECT",
+      "tables": [
+        "sales_channel"
+      ]
+    },
+    {
+      "id": "7860854783844803213",
+      "calls": 1,
+      "exec_ms": 0.042331000000000785,
+      "operation": "SELECT",
+      "tables": [
+        "cart_address",
+        "cart"
+      ]
+    },
+    {
+      "id": "3490691385498091067",
+      "calls": 1,
+      "exec_ms": 0.04846099999999964,
+      "operation": "SELECT",
+      "tables": [
+        "price_rule"
+      ]
+    },
+    {
+      "id": "-2743698812325696900",
+      "calls": 1,
+      "exec_ms": 0.18820699999999846,
+      "operation": "UPDATE",
+      "tables": [
+        "cart_line_item"
+      ]
+    },
+    {
+      "id": "-962636747184423790",
+      "calls": 1,
+      "exec_ms": 0.03952100000000014,
+      "operation": "SELECT",
+      "tables": [
+        "cart_line_item"
+      ]
+    },
+    {
+      "id": "-4041214061409549646",
+      "calls": 1,
+      "exec_ms": 0.02017100000000005,
+      "operation": "SELECT",
+      "tables": [
+        "offer"
+      ]
+    },
+    {
+      "id": "7565382014297467374",
+      "calls": 2,
+      "exec_ms": 0.20175800000000166,
+      "operation": "SELECT",
+      "tables": [
+        "cart_line_item_offer_offer"
+      ]
+    },
+    {
+      "id": "155934392714469180",
+      "calls": 1,
+      "exec_ms": 0.02599000000000018,
+      "operation": "SELECT",
+      "tables": [
+        "product_variant_price_set"
+      ]
+    },
+    {
+      "id": "7903711110794251115",
+      "calls": 2,
+      "exec_ms": 0.18525600000000075,
+      "operation": "SELECT",
+      "tables": [
+        "cart_address",
+        "cart"
+      ]
+    },
+    {
+      "id": "-2923154496312933285",
+      "calls": 1,
+      "exec_ms": 0.057562,
+      "operation": "SELECT",
+      "tables": [
+        "tax_region"
+      ]
+    },
+    {
+      "id": "1767738823122427229",
+      "calls": 1,
+      "exec_ms": 0.04286100000000026,
+      "operation": "SELECT",
+      "tables": [
+        "promotion_application_method",
+        "promotion_campaign",
+        "promotion",
+        "promotion_campaign_budget"
+      ]
+    },
+    {
+      "id": "-4549248045303548992",
+      "calls": 1,
+      "exec_ms": 0.02852100000000002,
+      "operation": "SELECT",
+      "tables": [
+        "cart_line_item"
+      ]
+    },
+    {
+      "id": "3465243819342810452",
+      "calls": 1,
+      "exec_ms": 0.024690999999999796,
+      "operation": "SELECT",
+      "tables": [
+        "seller"
+      ]
+    },
+    {
+      "id": "24177895458992734",
+      "calls": 3,
+      "exec_ms": 2.1176260000000013,
+      "operation": "SELECT",
+      "tables": [
+        "cart_shipping_method"
+      ]
+    }
+  ],
+  "notes": [
+    "Global pg_stat_statements delta, not per-request spans.",
+    "Excluded workflow_execution and pooler authentication pgbouncer from business totals.",
+    "Repeated existing-line mutation with saved US shipping address; not identical data shape to original pre-address sample."
+  ]
+}

@@ -1,5 +1,13 @@
 # Admin Next.js implementation report
 
+> Historical evidence from the initial shell delivery (last recorded change:
+> 2026-09-04). The body below intentionally preserves that implementation and its
+> test results; statements about disabled authentication, fixtures and deferred
+> integrations do not describe the current application. See the [current admin
+> README](README.md) and [development completion
+> audit](../../docs/develpment/development-completion-audit.md). Updated
+> documentation does not rerun or renew the historical checks.
+
 ## Delivered
 
 - Independent Next.js 16.3.4 App Router application on port 7000.

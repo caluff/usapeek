@@ -1,0 +1,76 @@
+{
+  "name": "@usapeek/ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "./theme.css"
+  ],
+  "exports": {
+    "./autocomplete": "./src/autocomplete.tsx",
+    "./alert-dialog": "./src/alert-dialog.tsx",
+    "./avatar": "./src/avatar.tsx",
+    "./badge": "./src/badge.tsx",
+    "./button": "./src/button.tsx",
+    "./card": "./src/card.tsx",
+    "./checkbox": "./src/checkbox.tsx",
+    "./confirmation-dialog": "./src/confirmation-dialog.tsx",
+    "./dialog": "./src/dialog.tsx",
+    "./dropdown-menu": "./src/dropdown-menu.tsx",
+    "./field": "./src/field.tsx",
+    "./format-phone-number": "./src/format-phone-number.ts",
+    "./input": "./src/input.tsx",
+    "./label": "./src/label.tsx",
+    "./logo": "./src/logo.tsx",
+    "./native-select": "./src/native-select.tsx",
+    "./pagination": "./src/pagination.tsx",
+    "./pagination-utils": "./src/pagination-utils.ts",
+    "./pending-indicator": "./src/pending-indicator.tsx",
+    "./separator": "./src/separator.tsx",
+    "./settings-option": "./src/settings-option.tsx",
+    "./sheet": "./src/sheet.tsx",
+    "./sidebar": "./src/sidebar.tsx",
+    "./skeleton": "./src/skeleton.tsx",
+    "./sonner": "./src/sonner.tsx",
+    "./table": "./src/table.tsx",
+    "./table-pagination": "./src/table-pagination.tsx",
+    "./textarea": "./src/textarea.tsx",
+    "./theme-setting": "./src/theme-setting.tsx",
+    "./theme.css": "./theme.css",
+    "./thumbnail": "./src/thumbnail.tsx",
+    "./tooltip": "./src/tooltip.tsx",
+    "./use-mobile": "./src/use-mobile.ts",
+    "./us-address-fields": "./src/us-address-fields.tsx",
+    "./us-phone-input": "./src/us-phone-input.tsx",
+    "./us-states": "./src/us-states.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "lucide-react": "1.55.0",
+    "next-themes": "0.4.6",
+    "radix-ui": "1.8.0",
+    "react-phone-number-input": "3.4.18",
+    "sonner": "2.0.8",
+    "tailwind-merge": "3.7.0"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "10.12.0",
+    "eslint-config-next": "16.4.0",
+    "typescript": "7.0.2",
+    "@eslint/compat": "2.1.1"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}

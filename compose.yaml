@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: usapeek/postgres-local:17.6.1.136
+    build:
+      context: ./docker
+      dockerfile: postgres.Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}
+      POSTGRES_DB: postgres
+    entrypoint: ["/bin/sh", "/docker-local/postgres-entrypoint.sh"]
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - ssl=on
+      - -c
+      - ssl_cert_file=/etc/postgresql-custom/tls/server.crt
+      - -c
+      - ssl_key_file=/etc/postgresql-custom/tls/server.key
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - postgres-config:/etc/postgresql-custom
+      - ./docker/postgres-entrypoint.sh:/docker-local/postgres-entrypoint.sh:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-h",
+          "localhost",
+          "-U",
+          "postgres",
+          "-d",
+          "postgres",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in the root .env file}
+    command:
+      - sh
+      - -c
+      - exec redis-server --appendonly yes --requirepass "$${REDIS_PASSWORD}"
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - REDISCLI_AUTH="$${REDIS_PASSWORD}" redis-cli ping
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  postgres-data:
+  postgres-config:
+  redis-data:

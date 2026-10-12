@@ -1,151 +1,153 @@
-import type { HttpTypes } from "@medusajs/types"
-import { LogOut, Menu, UserRound } from "lucide-react"
+import { Heart, UserRound } from "lucide-react"
 import Link from "next/link"
+import { Suspense } from "react"
 
-import { logoutCustomerAction } from "@/app/auth-actions"
+import { HeaderSearch } from "@/components/header-search"
+import { LogoWordmark } from "@/components/brand/logo"
+import { CatalogMenu } from "@/components/catalog-menu"
 import { ModeToggle } from "@/components/mode-toggle"
+import { GoogleOneTap } from "@/components/auth/google-one-tap"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { Skeleton } from "@/components/ui/skeleton"
+import { CustomerMenu } from "@/features/account/components/customer-menu"
+import { catalogHref } from "@/features/catalog/catalog-navigation"
+import { CartLink } from "@/features/cart/components/cart-link"
+import { getApplicationNavigation } from "@/features/vendor-onboarding/data"
+import { getCurrentCustomer, getCustomerSessionToken } from "@/lib/auth-sdk"
+import { readGoogleCustomerProfile } from "@/lib/google-customer-profile"
+import { getStorefrontCategories } from "@/lib/medusa"
 
-type SiteHeaderProps = {
-  categories: HttpTypes.StoreProductCategory[]
-  activeCategoryId?: string
-  customer?: HttpTypes.StoreCustomer | null
+async function CategoryLinks() {
+  const categories = await getStorefrontCategories()
+
+  return categories.map((category) => (
+    <DropdownMenuItem key={category.id} asChild className="min-h-11 px-3">
+      <Link href={catalogHref({ categoryId: category.id })}>
+        {category.name}
+      </Link>
+    </DropdownMenuItem>
+  ))
 }
 
-function categoryHref(categoryId: string) {
-  return `/?category_id=${encodeURIComponent(categoryId)}#catalog`
-}
+async function HeaderCustomerMenu() {
+  let customer
+  try {
+    customer = await getCurrentCustomer()
+  } catch {
+    return (
+      <Button asChild variant="ghost" size="icon" className="size-11">
+        <Link href="/account" aria-label="Abrir mi cuenta">
+          <UserRound className="size-5" strokeWidth={1.75} aria-hidden="true" />
+        </Link>
+      </Button>
+    )
+  }
 
-export function SiteHeader({
-  categories,
-  activeCategoryId,
-  customer,
-}: SiteHeaderProps) {
-  const visibleCategories = categories.slice(0, 5)
+  if (!customer) {
+    return (
+      <>
+        <Button
+          asChild
+          variant="ghost"
+          className="h-11 w-11 p-0 sm:w-auto sm:px-3"
+        >
+          <Link
+            href="/login"
+            aria-label="Iniciar sesión"
+            title="Iniciar sesión"
+          >
+            <UserRound
+              className="size-5"
+              strokeWidth={1.75}
+              aria-hidden="true"
+            />
+            <span className="hidden sm:inline">Iniciar sesión</span>
+          </Link>
+        </Button>
+        <GoogleOneTap />
+      </>
+    )
+  }
+
+  const vendorApplication = await getApplicationNavigation()
+  const googleProfile = readGoogleCustomerProfile(
+    await getCustomerSessionToken(),
+    customer.id,
+  )
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
-      <div className="mx-auto flex min-h-16 w-full max-w-[90rem] items-center justify-between gap-6 px-4 sm:px-6 lg:px-10">
+    <CustomerMenu
+      first_name={customer.first_name}
+      last_name={customer.last_name}
+      email={customer.email}
+      googleProfile={googleProfile}
+      vendorApplication={vendorApplication}
+    />
+  )
+}
+
+export function SiteHeader() {
+  return (
+    <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-background [--app-header-height:calc(3.75rem_+_1px)] lg:[--app-header-height:calc(4.25rem_+_1px)]">
+      <div className="mx-auto grid w-full max-w-[90rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 px-4 py-2 sm:gap-x-4 sm:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-6 lg:px-10 lg:py-3">
         <Link
           href="/"
-          className="inline-flex min-h-11 items-center font-sans text-sm font-black tracking-[0.18em] uppercase outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+          aria-label="USAPEEK, inicio"
+          className="inline-flex min-h-11 w-fit min-w-0 items-center rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring"
         >
-          mercado / v2
+          <LogoWordmark width={126} aria-hidden="true" className="h-auto w-[88px] min-[360px]:w-[104px] sm:w-[126px]" />
         </Link>
 
-        <nav
-          aria-label="Navegación principal"
-          className="hidden items-center gap-1 lg:flex"
-        >
-          <Link
-            href="/"
-            className="inline-flex min-h-11 items-center px-3 font-sans text-xs font-bold tracking-[0.1em] uppercase transition-colors hover:text-brand-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-          >
-            Inicio
-          </Link>
-          <Link
-            href="/#catalog"
-            className="inline-flex min-h-11 items-center px-3 font-sans text-xs font-bold tracking-[0.1em] uppercase transition-colors hover:text-brand-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-          >
-            Catálogo
-          </Link>
-          {visibleCategories.map((category) => (
-            <Link
-              key={category.id}
-              href={categoryHref(category.id)}
-              aria-current={
-                activeCategoryId === category.id ? "page" : undefined
-              }
-              className={cn(
-                "inline-flex min-h-11 max-w-40 items-center truncate px-3 font-sans text-xs font-bold tracking-[0.1em] uppercase transition-colors hover:text-brand-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
-                activeCategoryId === category.id && "text-brand-accent",
-              )}
-            >
-              {category.name}
-            </Link>
-          ))}
-        </nav>
+        <div className="col-span-2 row-start-2 flex min-w-0 items-center gap-2 pb-1 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:pb-0">
+          <nav aria-label="Navegación principal" className="shrink-0">
+            <CatalogMenu>
+              <Suspense
+                fallback={
+                  <Skeleton
+                    className="m-3 h-5 w-40"
+                    aria-label="Cargando categorías"
+                  />
+                }
+              >
+                <CategoryLinks />
+              </Suspense>
+            </CatalogMenu>
+          </nav>
+          <HeaderSearch />
+        </div>
 
-        <div className="flex items-center gap-1">
-          <ModeToggle />
-          <div className="hidden items-center gap-1 lg:flex">
+        <div className="col-start-2 row-start-1 flex items-center gap-0 sm:gap-1 lg:col-start-3">
+          <ModeToggle className="size-11" />
+          <Button asChild variant="ghost" size="icon" className="size-11">
             <Link
-              href={customer ? "/account" : "/login"}
-              className="inline-flex min-h-11 items-center gap-2 px-3 font-sans text-xs font-bold tracking-[0.08em] uppercase outline-none transition-colors hover:text-brand-accent focus-visible:ring-3 focus-visible:ring-ring/40"
+              href="/account/favorites"
+              aria-label="Favoritos"
+              title="Favoritos"
             >
-              <UserRound className="size-4" aria-hidden="true" />
-              {customer?.first_name || (customer ? "Mi cuenta" : "Ingresar")}
+              <Heart aria-hidden="true" className="size-5" strokeWidth={1.75} />
             </Link>
-            {customer ? (
-              <form action={logoutCustomerAction}>
-                <Button
-                  type="submit"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Cerrar sesión"
-                >
-                  <LogOut className="size-4" aria-hidden="true" />
-                </Button>
-              </form>
-            ) : null}
-          </div>
-          <details className="group relative lg:hidden">
-            <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-2 font-sans text-xs font-bold tracking-[0.1em] uppercase outline-none [&::-webkit-details-marker]:hidden focus-visible:ring-3 focus-visible:ring-ring/40">
-              <Menu aria-hidden="true" className="size-5" strokeWidth={1.75} />
-              Menú
-            </summary>
-            <nav
-              aria-label="Navegación móvil"
-              className="absolute top-[calc(100%+0.65rem)] right-0 w-[min(22rem,calc(100vw-2rem))] border border-border bg-background p-2 shadow-[6px_6px_0_var(--foreground)]"
+          </Button>
+          <Suspense
+            fallback={
+              <Skeleton className="size-11" aria-label="Cargando carrito" />
+            }
+          >
+            <CartLink />
+          </Suspense>
+          <div className="flex h-11 min-w-0 items-center">
+            <Suspense
+              fallback={
+                <Skeleton
+                  role="status"
+                  aria-label="Cargando cuenta"
+                  className="h-11 w-11 sm:w-36"
+                />
+              }
             >
-              <Link
-                href="/"
-                className="flex min-h-11 items-center border-b border-border px-3 font-sans text-sm font-semibold focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-              >
-                Inicio
-              </Link>
-              <Link
-                href="/#catalog"
-                className="flex min-h-11 items-center border-b border-border px-3 font-sans text-sm font-semibold focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-              >
-                Todo el catálogo
-              </Link>
-              {visibleCategories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={categoryHref(category.id)}
-                  aria-current={
-                    activeCategoryId === category.id ? "page" : undefined
-                  }
-                  className={cn(
-                    "flex min-h-11 items-center border-b border-border px-3 font-sans text-sm font-semibold last:border-b-0 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
-                    activeCategoryId === category.id && "text-brand-accent",
-                  )}
-                >
-                  {category.name}
-                </Link>
-              ))}
-              <Link
-                href={customer ? "/account" : "/login"}
-                className="flex min-h-11 items-center gap-2 border-b border-border px-3 font-sans text-sm font-semibold focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-              >
-                <UserRound className="size-4" aria-hidden="true" />
-                {customer ? "Mi cuenta" : "Iniciar sesión"}
-              </Link>
-              {customer ? (
-                <form action={logoutCustomerAction}>
-                  <button
-                    type="submit"
-                    className="flex min-h-11 w-full items-center gap-2 px-3 font-sans text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-                  >
-                    <LogOut className="size-4" aria-hidden="true" />
-                    Cerrar sesión
-                  </button>
-                </form>
-              ) : null}
-            </nav>
-          </details>
+              <HeaderCustomerMenu />
+            </Suspense>
+          </div>
         </div>
       </div>
     </header>

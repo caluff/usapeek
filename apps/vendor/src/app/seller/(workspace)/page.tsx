@@ -1,129 +1,194 @@
+import type { HttpTypes } from "@mercurjs/types";
+import type { VendorFinanceReportingResponse } from "@usapeek/api/finance-contracts";
+import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardFinance } from "@/features/dashboard/finance";
 import {
-  ArrowUpRight,
-  BellOff,
-  Boxes,
-  CircleDollarSign,
-  PackageCheck,
-  ShoppingBag,
-} from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+  DashboardOrderCount,
+  DashboardOrdersProvider,
+  DashboardRecentOrders,
+} from "@/features/dashboard/orders";
+import { productThumbnailsForOrderItems } from "@/features/orders/image-data";
+import { FinanceReportToolbar } from "@/features/finance-reporting/toolbar";
+import { financePeriodInput } from "@/features/finance-reporting/periods";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { DemoNotice } from "@/components/vendor/demo-notice";
-import { EmptyState } from "@/components/vendor/empty-state";
-import { MetricCard } from "@/components/vendor/metric-card";
-import { RecentOrders } from "@/components/vendor/recent-orders";
-import { demoMetrics, demoWeeklyActivity } from "@/lib/demo-data";
+  ORDER_LIST_FIELDS,
+  resultOf,
+  workspace,
+} from "@/features/workspace/data";
 
-const metricIcons = [
-  CircleDollarSign,
-  ShoppingBag,
-  PackageCheck,
-  Boxes,
-] as const;
+export const metadata: Metadata = {
+  title: "Panel de vendedor",
+  description:
+    "Consulta el resumen financiero, los pedidos recientes y la actividad de tu tienda en USAPEEK.",
+};
 
-export default function SellerDashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string; data_kind?: string; page?: string }>;
+}) {
+  const search = await searchParams;
+  const period = financePeriodInput(search.period);
+  const { client, membership } = await workspace();
+  const finance = resultOf(
+    client.get<VendorFinanceReportingResponse>("/vendor/finance/reporting", {
+      period,
+      mode: "test",
+      currency_code: "usd",
+      data_kind: "ordinary",
+    }),
+  );
+  const [products, orders, inventory] = [
+    resultOf(
+      client.get<HttpTypes.VendorProductListResponse>("/vendor/products", {
+        limit: 1,
+        fields: "id",
+      }),
+    ),
+    resultOf(
+      client.get<HttpTypes.VendorOrderListResponse>("/vendor/orders", {
+        limit: 5,
+        order: "-created_at",
+        fields: ORDER_LIST_FIELDS,
+      }),
+    ),
+    resultOf(
+      client.get<HttpTypes.VendorInventoryItemListResponse>(
+        "/vendor/inventory-items",
+        { limit: 1, fields: "id" },
+      ),
+    ),
+  ] as const;
+  const thumbnails = orders.then((result) =>
+    productThumbnailsForOrderItems(
+      result.data?.orders.flatMap((order) => order.items ?? []) ?? [],
+    ),
+  );
+  const metrics = [
+    {
+      title: "Catálogo disponible",
+      result: products,
+      href: "/seller/catalog",
+      note: "Incluye productos compartidos",
+    },
+    {
+      title: "Pedidos de la tienda",
+      result: orders,
+      href: "/seller/orders",
+      note: "Total de pedidos asignados",
+    },
+    {
+      title: "Artículos de inventario",
+      result: inventory,
+      href: "/seller/inventory",
+      note: "Artículos vinculados a la tienda",
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <div className="mb-2 flex items-center gap-2">
-            <Badge variant="secondary">Resumen diario</Badge>
-            <span className="text-xs font-semibold text-muted-foreground">
-              Viernes · muestra estática
-            </span>
-          </div>
-          <h1 className="font-display text-3xl tracking-tight sm:text-4xl">
-            Tu tienda, de un vistazo.
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Un panel sereno para priorizar pedidos, catálogo e inventario sin
-            perder el hilo de la operación.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/seller/catalog">
-            Ver catálogo demo
-            <ArrowUpRight aria-hidden="true" />
-          </Link>
-        </Button>
-      </div>
-
-      <DemoNotice />
-
-      <section aria-labelledby="metrics-title">
-        <h2 id="metrics-title" className="sr-only">
-          Métricas de demostración
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {demoMetrics.map((metric, index) => (
-            <MetricCard
-              key={metric.label}
-              {...metric}
-              icon={metricIcons[index]}
-            />
+    <DashboardOrdersProvider
+      key={membership.seller.id}
+      sellerId={membership.seller.id}
+      initial={orders}
+      products={thumbnails}
+    >
+      <div className="space-y-6">
+        <h1 className="sr-only">Panel de vendedor</h1>
+        <Card aria-label="Informe financiero">
+          <CardContent className="space-y-4 pt-5">
+            <FinanceReportToolbar period={period} />
+            <Suspense
+              key={period}
+              fallback={
+                <div
+                  role="status"
+                  aria-label="Cargando informe financiero"
+                  className="h-48 animate-pulse bg-muted"
+                />
+              }
+            >
+              <DashboardFinance
+                key={`${membership.seller.id}:${period}`}
+                sellerId={membership.seller.id}
+                period={period}
+                initial={finance}
+              />
+            </Suspense>
+          </CardContent>
+        </Card>
+        <div className="grid gap-4 lg:grid-cols-3">
+          {metrics.map((metric) => (
+            <Card key={metric.title}>
+              <CardHeader>
+                <CardTitle>{metric.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Suspense
+                  fallback={
+                    <div
+                      role="status"
+                      aria-label="Cargando total"
+                      className="h-16 animate-pulse bg-muted"
+                    />
+                  }
+                >
+                  {metric.href === "/seller/orders" ? (
+                    <DashboardOrderCount />
+                  ) : (
+                    <MetricValue result={metric.result} note={metric.note} />
+                  )}
+                </Suspense>
+                <Link
+                  href={metric.href}
+                  className="mt-4 inline-flex text-sm font-semibold text-primary hover:underline"
+                >
+                  Consultar →
+                </Link>
+              </CardContent>
+            </Card>
           ))}
         </div>
-      </section>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.75fr)]">
-        <RecentOrders />
-        <div className="space-y-6">
-          <Card>
-            <CardHeader className="border-b border-border/70">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <CardTitle>Ritmo semanal</CardTitle>
-                  <CardDescription>
-                    Volumen relativo de pedidos ficticios.
-                  </CardDescription>
-                </div>
-                <Badge variant="outline">Demo</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle>Pedidos recientes</CardTitle>
+          </CardHeader>
+          <Suspense
+            fallback={
               <div
-                className="flex h-40 items-end justify-between gap-2"
-                aria-label="Gráfico de actividad semanal de demostración"
-              >
-                {demoWeeklyActivity.map((day) => (
-                  <div
-                    key={day.label}
-                    className="flex h-full flex-1 flex-col items-center justify-end gap-2"
-                  >
-                    <div className="flex h-full w-full items-end rounded-md bg-secondary/70 p-1">
-                      <div
-                        className="w-full rounded-[3px] bg-primary/80"
-                        style={{ height: `${day.value}%` }}
-                        title={`${day.label}: ${day.value}% de actividad ficticia`}
-                      />
-                    </div>
-                    <span className="font-mono text-[11px] font-semibold text-muted-foreground">
-                      {day.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <EmptyState
-            compact
-            eyebrow="Bandeja demo"
-            title="Todo está tranquilo"
-            description="No hay avisos en esta muestra. Los estados vacíos mantienen el contexto y evitan confundir una carga pendiente con ausencia de datos."
-            icon={BellOff}
-          />
-        </div>
+                role="status"
+                aria-label="Cargando pedidos"
+                className="h-64 animate-pulse bg-muted"
+              />
+            }
+          >
+            <DashboardRecentOrders />
+          </Suspense>
+        </Card>
       </div>
-    </div>
+    </DashboardOrdersProvider>
+  );
+}
+
+async function MetricValue({
+  result,
+  note,
+}: {
+  result: Promise<{ data?: { count: number }; error?: string }>;
+  note: string;
+}) {
+  const metric = await result;
+  return (
+    <>
+      <p className="font-display text-4xl">{metric.data?.count ?? "—"}</p>
+      <p
+        className="mt-2 text-xs leading-5 text-muted-foreground"
+        role={metric.error ? "alert" : undefined}
+      >
+        {metric.error ?? note}
+      </p>
+    </>
   );
 }

@@ -52,6 +52,7 @@ export function safeRedirectPath(
     const base = new URL("https://admin.invalid");
     const candidate = new URL(value, base);
     const authenticationRoutes = [
+      "/auth/google/callback",
       "/login",
       "/forgot-password",
       "/reset-password",

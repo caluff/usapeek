@@ -2,6 +2,7 @@
 
 # Dependencies
 node_modules
+.pnpm-store/
 .pnp
 .pnp.js
 
@@ -29,6 +30,7 @@ build
 dist
 .medusa/
 .cache/
+packages/api/static/
 
 # Yarn (PnP)
 .yarn/cache
@@ -46,3 +48,4 @@ yarn-error.log*
 .DS_Store
 *.pem
 .idea/
+/test.pdf

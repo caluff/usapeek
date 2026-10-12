@@ -1,81 +1,31 @@
-# Custom Workflows
+# Marketplace workflows
 
-A workflow is a series of queries and actions that complete a task.
+This directory orchestrates local mutations around native Medusa/Mercur flows.
 
-The workflow is created in a TypeScript or JavaScript file under the `src/workflows` directory.
+| Area                 | Entry points                                                                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Onboarding           | `mutate-vendor-application.ts`, `recover-vendor-application.ts`, `vendor-application-notifications.ts`, `backfill-vendor-warehouse.ts`.           |
+| Auth                 | `complete-google-auth.ts`, `vendor-session.ts`.                                                                                                   |
+| Catalog/inventory    | `validate-vendor-catalog.ts`, `upload-catalog-images.ts`, `update-vendor-offer-price.ts`, `update-vendor-stock.ts`, `set-product-sale-status.ts`. |
+| Catalog permissions | `set-seller-catalog-permission.ts`, `catalog-permission-create-product.ts`, `catalog-permission-edit-product.ts`; native moderation with private per-store authority. |
+| Checkout/finance     | `validate-cart-sale-status.ts`, `guard-order-finance-writer.ts`, `operate-order-finance.ts`, `order-finance-native.ts`.                           |
+| Settlement/recovery  | `settle-order-finance.ts`, `settlement-native.ts`, `recover-order-finance.ts`, `recover-finance-execution-lock.ts`, `refresh-order-finance-provider-facts.ts`. |
+| Automatic settlement | `record-order-completions.ts`, `automatically-settle-orders.ts`; server-observed immutable clock with a frozen 0–365-day delay and the guarded settlement executor.              |
+| Shipping/Connect     | `configure-vendor-shipping.ts`, `shipment-notification.ts`, `refresh-vendor-stripe-account.ts`, `reconcile-stripe-account.ts`.                    |
+| Search/favorites     | `algolia/`, `update-customer-favorite.ts`.                                                                                                        |
+| Scheduled evaluation | `evaluate-commerce.ts`; separate general-commerce path remains gated and disabled.                                                                |
 
-> Learn more about workflows in [this documentation](https://docs.medusajs.com/learn/fundamentals/workflows).
+Focused operations live in `steps/`. `hooks/` composes native offer-validation
+and Stripe sale-readiness hooks. Review installed and local registrations before
+adding handlers; retain composition/load regression tests.
 
-For example:
+Keep composition synchronous and use workflow primitives for branching/transforms.
+Business validation, authorization and compensation belong in workflows; modules
+own persistence. Reuse native inventory, pricing, payment and order operations.
 
-```ts
-import {
-  createStep,
-  createWorkflow,
-  WorkflowResponse,
-  StepResponse,
-} from "@medusajs/framework/workflows-sdk"
-
-const step1 = createStep("step-1", async () => {
-  return new StepResponse(`Hello from step one!`)
-})
-
-type WorkflowInput = {
-  name: string
-}
-
-const step2 = createStep(
-  "step-2",
-  async ({ name }: WorkflowInput) => {
-    return new StepResponse(`Hello ${name} from step two!`)
-  }
-)
-
-type WorkflowOutput = {
-  message1: string
-  message2: string
-}
-
-const helloWorldWorkflow = createWorkflow(
-  "hello-world",
-  (input: WorkflowInput) => {
-    const greeting1 = step1()
-    const greeting2 = step2(input)
-    
-    return new WorkflowResponse({
-      message1: greeting1,
-      message2: greeting2
-    })
-  }
-)
-
-export default helloWorldWorkflow
-```
-
-## Execute Workflow
-
-You can execute the workflow from other resources, such as API routes, scheduled jobs, or subscribers.
-
-For example, to execute the workflow in an API route:
-
-```ts
-import type {
-  MedusaRequest,
-  MedusaResponse,
-} from "@medusajs/framework"
-import myWorkflow from "../../../workflows/hello-world"
-
-export async function GET(
-  req: MedusaRequest,
-  res: MedusaResponse
-) {
-  const { result } = await myWorkflow(req.scope)
-    .run({
-      input: {
-        name: req.query.name as string,
-      },
-    })
-
-  res.send(result)
-}
-```
+The journal and original snapshots support immutable TEST/USD financial history,
+settlement and general recovery. F01–F12 / Phase 1–6 are closed for manual
+operations. Automatic settlement has a separate opt-in and reuses those controls;
+its full new-order run after 72 real hours still needs verification. Keep general
+commerce jobs disabled and follow the [job contract](../jobs/README.md) and
+[current progress](../../../../docs/develpment/development-progress.md).

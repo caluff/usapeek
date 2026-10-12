@@ -1,8 +1,9 @@
 "use server";
 
-import type { AuthLoginResponse } from "@medusajs/js-sdk";
 import { redirect } from "next/navigation";
+import { completeAdminLogin } from "@/lib/auth-login";
 
+import { adminLoginErrorMessage } from "@/lib/auth-service";
 import {
   clearAdminReset,
   clearAdminSession,
@@ -12,81 +13,20 @@ import {
   getAdminReset,
   getAdminVerification,
   getAdminVerificationCode,
-  setAdminMfa,
-  setAdminSession,
-  setAdminVerification,
 } from "@/lib/auth-sdk";
 import {
   type AuthActionState,
   normalizeEmail,
-  safeExternalAuthUrl,
   safeRedirectPath,
   validateCredentials,
 } from "@/lib/auth-utils";
-
-const INVALID_CREDENTIALS =
-  "No pudimos iniciar sesión con esos datos. Revisa el correo y la contraseña.";
 
 function configurationError(): AuthActionState {
   return {
     status: "error",
     message:
-      "La autenticación no está configurada. Revisa NEXT_PUBLIC_MEDUSA_BACKEND_URL.",
+      "El servicio de acceso no está disponible. Intenta más tarde o contacta al soporte.",
   };
-}
-
-async function completeAdminLogin(
-  result: AuthLoginResponse,
-  email: string,
-  next: string,
-): Promise<AuthActionState> {
-  if (typeof result === "string") {
-    const authenticated = createAdminSdk(result);
-    if (!authenticated) return configurationError();
-    try {
-      await authenticated.admin.user.me();
-    } catch {
-      return { status: "error", message: INVALID_CREDENTIALS };
-    }
-    await setAdminSession(result);
-    redirect(safeRedirectPath(next, "/dashboard"));
-  }
-
-  if ("verification_required" in result) {
-    await setAdminVerification({ token: result.token, email });
-    try {
-      await createAdminSdk(result.token)?.auth.verification.request({
-        entity_id: email,
-        entity_type: "email",
-        metadata: { actor_type: "user" },
-      });
-    } catch {
-      // The current code can still be valid; retry remains available.
-    }
-    redirect(`/verify-email?next=${encodeURIComponent(next)}`);
-  }
-
-  if ("mfa_required" in result) {
-    await setAdminMfa({
-      token: result.token,
-      challengeId: result.mfa_challenge.id,
-      methods: result.mfa_challenge.methods,
-    });
-    return {
-      status: "mfa_required",
-      message: "Confirma el segundo factor para continuar.",
-      mfaMethods: result.mfa_challenge.methods,
-    };
-  }
-
-  const externalUrl = safeExternalAuthUrl(result.location);
-  return externalUrl
-    ? {
-        status: "external_redirect",
-        message: "El proveedor requiere completar el acceso en otra página.",
-        externalUrl,
-      }
-    : { status: "error", message: "El proveedor devolvió una redirección no válida." };
 }
 
 export async function loginAdminAction(
@@ -108,8 +48,8 @@ export async function loginAdminAction(
       email,
       next,
     );
-  } catch {
-    return { status: "error", message: INVALID_CREDENTIALS };
+  } catch (error) {
+    return { status: "error", message: adminLoginErrorMessage(error) };
   }
 }
 
@@ -127,14 +67,13 @@ export async function verifyAdminMfaAction(
   }
   const sdk = createAdminSdk(secret.token);
   if (!sdk) return configurationError();
+  let token;
   try {
-    const token = await sdk.auth.mfa.verifyChallenge(secret.challengeId, { method, code });
-    await createAdminSdk(token)?.admin.user.me();
-    await setAdminSession(token);
+    token = await sdk.auth.mfa.verifyChallenge(secret.challengeId, { method, code });
   } catch {
     return { status: "mfa_required", message: "No pudimos validar el código.", mfaMethods: secret.methods };
   }
-  redirect(next);
+  return completeAdminLogin(token, "", next);
 }
 
 export async function forgotAdminPasswordAction(

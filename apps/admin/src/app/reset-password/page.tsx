@@ -11,7 +11,9 @@ import {
 import { getAdminReset } from "@/lib/auth-sdk";
 
 export const metadata: Metadata = {
-  title: "Nueva contraseña | Marketplace Admin",
+  title: "Nueva contraseña",
+  description:
+    "Establece una nueva contraseña para recuperar el acceso a tu cuenta de operador de USAPEEK.",
   robots: { index: false, follow: false },
 };
 

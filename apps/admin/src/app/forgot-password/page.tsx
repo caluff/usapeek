@@ -10,7 +10,9 @@ import {
 } from "@/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "Recuperar acceso | Marketplace Admin",
+  title: "Recuperar acceso",
+  description:
+    "Solicita instrucciones para recuperar el acceso a tu cuenta de operador de USAPEEK.",
 };
 
 export default function ForgotPasswordPage() {

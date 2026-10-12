@@ -1,32 +1,44 @@
 import type { Metadata } from "next";
-import { ShoppingBag } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Suspense } from "react";
+import {
+  OrderFilters,
+  OrderList,
+  OrderListSkeleton,
+} from "@/features/orders/list-components";
+import { orderListInput } from "@/features/orders/parameters";
 
-import { DemoNotice } from "@/components/vendor/demo-notice";
-import { EmptyState } from "@/components/vendor/empty-state";
+export const metadata: Metadata = {
+  title: "Pedidos",
+  description: "Consulta, filtra y gestiona los pedidos asignados a tu tienda en USAPEEK.",
+};
 
-export const metadata: Metadata = { title: "Pedidos" };
-
-export default function OrdersPage() {
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    q?: string | string[];
+    page?: string | string[];
+    tab?: string | string[];
+  }>;
+}) {
+  const input = orderListInput(await searchParams);
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-          Pedidos
-        </p>
-        <h1 className="mt-2 font-display text-3xl tracking-tight">
-          Cola de preparación
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Contenedor visual sin acciones de cumplimiento ni conexión al backend.
-        </p>
+      <h1 className="sr-only">Pedidos de la tienda</h1>
+      <div className="flex justify-end">
+        <Button asChild size="sm" variant="outline">
+          <Link href="/seller/orders/returns">Devoluciones</Link>
+        </Button>
       </div>
-      <DemoNotice />
-      <EmptyState
-        eyebrow="Estado vacío de muestra"
-        title="No hay pedidos conectados"
-        description="La tabla del inicio usa fixtures explícitos para revisar densidad y estados. Esta ruta no carga pedidos reales ni ofrece acciones operativas."
-        icon={ShoppingBag}
-      />
+      <OrderFilters input={input} />
+      <Suspense
+        key={`${input.q}:${input.tab.value}:${input.page}`}
+        fallback={<OrderListSkeleton />}
+      >
+        <OrderList input={input} />
+      </Suspense>
     </div>
   );
 }

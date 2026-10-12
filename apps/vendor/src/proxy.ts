@@ -18,6 +18,7 @@ const publicSellerRoutes = [
   "/seller/verify-email",
   "/seller/no-access",
   "/seller/select-seller",
+      "/seller/status",
 ];
 
 export function proxy(request: NextRequest) {

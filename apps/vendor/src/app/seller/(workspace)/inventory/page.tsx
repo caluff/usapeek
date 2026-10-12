@@ -1,32 +1,42 @@
+import Link from "next/link";
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import { Boxes } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeading } from "@/features/workspace/components";
+import { resultOf, workspace } from "@/features/workspace/data";
+import { sellerWarehouse } from "@/features/inventory/data";
+import { WarehouseCard } from "@/features/inventory/warehouse-card";
+import { InventoryResults } from "@/features/inventory/inventory-results";
 
-import { DemoNotice } from "@/components/vendor/demo-notice";
-import { EmptyState } from "@/components/vendor/empty-state";
-
-export const metadata: Metadata = { title: "Inventario" };
-
-export default function InventoryPage() {
+export const metadata: Metadata = {
+  title: "Inventario",
+  description: "Consulta y administra las existencias de los artículos de inventario vinculados a tu tienda.",
+};
+export default async function InventoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
+  const { client } = await workspace();
+  const warehouse = resultOf(sellerWarehouse(client));
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-          Inventario
-        </p>
-        <h1 className="mt-2 font-display text-3xl tracking-tight">
-          Señales de stock
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Superficie reservada para una lectura futura, sin controles de ajuste.
-        </p>
-      </div>
-      <DemoNotice />
-      <EmptyState
-        eyebrow="Estado vacío de muestra"
-        title="Sin niveles de stock conectados"
-        description="Esta maqueta no crea depósitos, niveles ni reservas. La integración de inventario deberá respetar el alcance del vendedor antes de mostrar datos."
-        icon={Boxes}
-      />
+      <PageHeading title="Inventario">
+        <Button asChild variant="outline">
+          <Link href="/seller/inventory/locations">Ver almacén</Link>
+        </Button>
+      </PageHeading>
+      <Suspense fallback={<Skeleton className="h-5 w-64" />}>
+        <WarehouseCard result={warehouse} compact />
+      </Suspense>
+      <Suspense fallback={null}>
+        <InventoryResults
+          client={client}
+          searchParams={searchParams}
+          warehouse={warehouse}
+        />
+      </Suspense>
     </div>
   );
 }

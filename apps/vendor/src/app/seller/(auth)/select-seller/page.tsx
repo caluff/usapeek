@@ -9,7 +9,10 @@ import { VendorAuthShell } from "@/components/vendor/vendor-auth-shell";
 import { getVendorToken, listVendorMemberships } from "@/lib/auth-sdk";
 import { safeRedirectPath } from "@/lib/auth-utils";
 
-export const metadata: Metadata = { title: "Elegir tienda" };
+export const metadata: Metadata = {
+  title: "Elegir tienda",
+  description: "Selecciona la tienda que quieres gestionar con tu cuenta de vendedor de USAPEEK.",
+};
 export default async function SelectSellerPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const token = await getVendorToken();
   const next = safeRedirectPath((await searchParams).next, "/seller");

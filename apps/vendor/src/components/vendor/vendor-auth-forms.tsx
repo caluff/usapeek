@@ -18,10 +18,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { INITIAL_VENDOR_AUTH_STATE, type VendorAuthActionState } from "@/lib/auth-utils";
+import { useFeedbackToast } from "@/components/feedback-toast";
+
+const EXPIRED_SESSION = { status: "warning", message: "Tu sesión venció. Inicia sesión nuevamente." };
+const INVALID_RESET_LINK: VendorAuthActionState = { status: "error", message: "El enlace no es válido o ya venció." };
 
 function Status({ state }: { state: VendorAuthActionState }) {
+  useFeedbackToast(state);
   if (!state.message) return <span aria-live="polite" className="sr-only" />;
-  return <div aria-live="polite" className={state.status === "success" ? "rounded-lg border border-success/35 bg-success/8 px-4 py-3 text-sm" : "rounded-lg border border-warning/55 bg-warning/10 px-4 py-3 text-sm"}>{state.message}{state.externalUrl ? <a className="mt-3 flex min-h-11 items-center justify-center rounded-md bg-primary px-4 font-semibold text-primary-foreground" href={state.externalUrl}>Continuar con el proveedor</a> : null}</div>;
+  return <div aria-live="polite" className={state.status === "success" ? "rounded-lg border border-success/35 bg-success/8 px-4 py-3 text-sm" : state.status === "error" ? "rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive" : "rounded-lg border border-warning/55 bg-warning/10 px-4 py-3 text-sm"}>{state.message}{state.externalUrl ? <a className="mt-3 flex min-h-11 items-center justify-center rounded-md bg-primary px-4 font-semibold text-primary-foreground" href={state.externalUrl}>Continuar con el proveedor</a> : null}</div>;
 }
 
 function PasswordField({ id, name, label, autoComplete, error }: { id: string; name: string; label: string; autoComplete: string; error?: string }) {
@@ -37,8 +42,9 @@ function Submit({ pending, children }: { pending: boolean; children: string }) {
   return <Button type="submit" className="h-11 w-full" disabled={pending} aria-disabled={pending}>{pending ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : null}{pending ? "Procesando…" : children}</Button>;
 }
 
-export function VendorLoginForm({ next, expired }: { next: string; expired: boolean }) {
-  const [state, action, pending] = useActionState(loginVendorAction, INITIAL_VENDOR_AUTH_STATE);
+export function VendorLoginForm({ next, expired, mfaMethods }: { next: string; expired: boolean; mfaMethods?: string[] }) {
+  useFeedbackToast(expired ? EXPIRED_SESSION : null);
+  const [state, action, pending] = useActionState(loginVendorAction, mfaMethods ? { status: "mfa_required", mfaMethods, message: "Confirma el segundo factor para continuar." } satisfies VendorAuthActionState : INITIAL_VENDOR_AUTH_STATE);
   const [mfa, mfaAction, mfaPending] = useActionState(verifyVendorMfaAction, INITIAL_VENDOR_AUTH_STATE);
   if (state.status === "mfa_required") return <form action={mfaAction} className="space-y-5" aria-label="Verificación de segundo factor"><input type="hidden" name="next" value={next} /><input type="hidden" name="method" value={state.mfaMethods?.[0] ?? "totp"} /><div className="space-y-2"><Label htmlFor="mfa-code">Código de verificación</Label><Input id="mfa-code" name="code" autoComplete="one-time-code" required className="h-11" /></div><Status state={mfa.message ? mfa : state} /><Submit pending={mfaPending}>Confirmar código</Submit></form>;
   return <form action={action} className="space-y-5" aria-label="Acceso de miembros vendedores"><input type="hidden" name="next" value={next} />{expired ? <p role="status" className="rounded-lg border border-warning/55 bg-warning/10 px-4 py-3 text-sm">Tu sesión venció. Inicia sesión nuevamente.</p> : null}<EmailField error={state.fieldErrors?.email} /><PasswordField id="password" name="password" label="Contraseña" autoComplete="current-password" error={state.fieldErrors?.password} /><div className="flex justify-end"><Link href="/seller/forgot-password" className="inline-flex min-h-11 items-center text-xs font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground">¿Olvidaste tu contraseña?</Link></div><Status state={state} /><Submit pending={pending}>Ingresar al portal</Submit></form>;
@@ -51,7 +57,7 @@ export function VendorForgotForm() {
 
 export function VendorResetForm({ hasToken }: { hasToken: boolean }) {
   const [state, action, pending] = useActionState(resetVendorPasswordAction, INITIAL_VENDOR_AUTH_STATE);
-  return <form action={action} className="space-y-5" aria-label="Restablecer contraseña de miembro">{!hasToken && state.status === "idle" ? <Status state={{ status: "error", message: "El enlace no es válido o ya venció." }} /> : null}<PasswordField id="new-password" name="password" label="Nueva contraseña" autoComplete="new-password" error={state.fieldErrors?.password} /><PasswordField id="confirmation" name="confirmation" label="Repite la contraseña" autoComplete="new-password" /><Status state={state} />{state.status === "success" ? <Button asChild className="h-11 w-full"><Link href="/seller/login">Volver al acceso</Link></Button> : <Submit pending={pending}>Guardar contraseña</Submit>}</form>;
+  return <form action={action} className="space-y-5" aria-label="Restablecer contraseña de miembro">{!hasToken && state.status === "idle" ? <Status state={INVALID_RESET_LINK} /> : null}<PasswordField id="new-password" name="password" label="Nueva contraseña" autoComplete="new-password" error={state.fieldErrors?.password} /><PasswordField id="confirmation" name="confirmation" label="Repite la contraseña" autoComplete="new-password" /><Status state={state} />{state.status === "success" ? <Button asChild className="h-11 w-full"><Link href="/seller/login">Volver al acceso</Link></Button> : <Submit pending={pending}>Guardar contraseña</Submit>}</form>;
 }
 
 export function VendorVerifyForm({ hasCode, next }: { hasCode: boolean; next: string }) {

@@ -1,7 +1,10 @@
-import Medusa, { FetchError } from "@medusajs/js-sdk";
+import Medusa from "@medusajs/js-sdk";
 import type { HttpTypes } from "@medusajs/types";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { cache } from "react";
 
+import { retrieveAdminUser } from "@/lib/auth-service";
 import {
   ADMIN_MFA_COOKIE,
   ADMIN_RESET_COOKIE,
@@ -48,6 +51,25 @@ export function createAdminSdk(token?: string) {
   });
 }
 
+export async function getAdminToken() {
+  return (await cookies()).get(ADMIN_SESSION_COOKIE)?.value;
+}
+
+const getAdminAccount = cache(async () => {
+  const token = await getAdminToken();
+  if (!token) return null;
+  const sdk = createAdminSdk(token);
+  if (!sdk) throw new Error("Admin backend is not configured");
+  const user = await retrieveAdminUser(sdk.admin.user);
+  return user ? { user, sdk } : null;
+});
+
+export async function requireAdminSdk() {
+  const account = await getAdminAccount();
+  if (!account) redirect("/login?reason=expired&next=%2Fdashboard");
+  return account.sdk;
+}
+
 const secure = process.env.NODE_ENV === "production";
 
 export async function setAdminSession(token: string) {
@@ -85,7 +107,9 @@ export async function setAdminMfa(secret: MfaSecret) {
 }
 
 export async function getAdminMfa() {
-  return unpackSecret<MfaSecret>((await cookies()).get(ADMIN_MFA_COOKIE)?.value);
+  return unpackSecret<MfaSecret>(
+    (await cookies()).get(ADMIN_MFA_COOKIE)?.value,
+  );
 }
 
 export async function setAdminVerification(secret: VerificationSecret) {
@@ -115,7 +139,9 @@ export async function clearAdminVerification() {
 }
 
 export async function getAdminReset() {
-  return unpackSecret<ResetSecret>((await cookies()).get(ADMIN_RESET_COOKIE)?.value);
+  return unpackSecret<ResetSecret>(
+    (await cookies()).get(ADMIN_RESET_COOKIE)?.value,
+  );
 }
 
 export async function clearAdminReset() {
@@ -123,16 +149,5 @@ export async function clearAdminReset() {
 }
 
 export async function getCurrentAdmin(): Promise<HttpTypes.AdminUser | null> {
-  const token = (await cookies()).get(ADMIN_SESSION_COOKIE)?.value;
-  if (!token) return null;
-  const sdk = createAdminSdk(token);
-  if (!sdk) return null;
-  try {
-    return (await sdk.admin.user.me()).user;
-  } catch (error) {
-    if (error instanceof FetchError && [401, 403].includes(error.status ?? 0)) {
-      return null;
-    }
-    return null;
-  }
+  return (await getAdminAccount())?.user ?? null;
 }

@@ -16,6 +16,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { INITIAL_AUTH_STATE, type AuthActionState } from "@/lib/auth-utils";
+import { withFeedbackToast } from "@/lib/feedback";
+import { FeedbackToast } from "@/components/feedback-toast";
 
 function Status({ state }: { state: AuthActionState }) {
   if (!state.message) return <span className="sr-only" aria-live="polite" />;
@@ -25,6 +27,8 @@ function Status({ state }: { state: AuthActionState }) {
       className={
         state.status === "success"
           ? "rounded-md border border-success/35 bg-success/8 px-3 py-2.5 text-sm text-success-foreground"
+          : state.status === "error"
+            ? "rounded-md border border-destructive/35 bg-destructive/8 px-3 py-2.5 text-sm text-destructive"
           : "rounded-md border border-warning/45 bg-warning/10 px-3 py-2.5 text-sm"
       }
     >
@@ -68,9 +72,9 @@ function Submit({ pending, children }: { pending: boolean; children: string }) {
   return <Button type="submit" className="h-11 w-full" disabled={pending} aria-disabled={pending}>{pending ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : null}{pending ? "Procesando…" : children}</Button>;
 }
 
-export function AdminLoginForm({ next, expired }: { next: string; expired: boolean }) {
-  const [state, action, pending] = useActionState(loginAdminAction, INITIAL_AUTH_STATE);
-  const [mfaState, mfaAction, mfaPending] = useActionState(verifyAdminMfaAction, INITIAL_AUTH_STATE);
+export function AdminLoginForm({ next, expired, mfaMethods }: { next: string; expired: boolean; mfaMethods?: string[] }) {
+  const [state, action, pending] = useActionState(withFeedbackToast(loginAdminAction), mfaMethods ? { status: "mfa_required", mfaMethods, message: "Confirma el segundo factor para continuar." } satisfies AuthActionState : INITIAL_AUTH_STATE);
+  const [mfaState, mfaAction, mfaPending] = useActionState(withFeedbackToast(verifyAdminMfaAction), INITIAL_AUTH_STATE);
   if (state.status === "mfa_required") {
     return (
       <form action={mfaAction} className="space-y-4" aria-label="Verificación de segundo factor">
@@ -85,6 +89,7 @@ export function AdminLoginForm({ next, expired }: { next: string; expired: boole
   return (
     <form action={action} className="space-y-4" aria-label="Acceso de operadores">
       <input type="hidden" name="next" value={next} />
+      {expired ? <FeedbackToast status="warning" message="Tu sesión venció. Inicia sesión nuevamente." /> : null}
       {expired ? <p role="status" className="rounded-md border border-warning/45 bg-warning/10 px-3 py-2.5 text-sm">Tu sesión venció. Inicia sesión nuevamente.</p> : null}
       <EmailField error={state.fieldErrors?.email} />
       <PasswordField id="password" name="password" label="Contraseña" autoComplete="current-password" error={state.fieldErrors?.password} />
@@ -96,17 +101,17 @@ export function AdminLoginForm({ next, expired }: { next: string; expired: boole
 }
 
 export function AdminForgotForm() {
-  const [state, action, pending] = useActionState(forgotAdminPasswordAction, INITIAL_AUTH_STATE);
+  const [state, action, pending] = useActionState(withFeedbackToast(forgotAdminPasswordAction), INITIAL_AUTH_STATE);
   return <form action={action} className="space-y-4" aria-label="Recuperación de contraseña de operador"><EmailField error={state.fieldErrors?.email} /><Status state={state} /><Submit pending={pending}>Enviar instrucciones</Submit><Link href="/login" className="flex min-h-11 items-center justify-center text-sm font-semibold underline underline-offset-4">Volver al acceso</Link></form>;
 }
 
 export function AdminResetForm({ hasToken }: { hasToken: boolean }) {
-  const [state, action, pending] = useActionState(resetAdminPasswordAction, INITIAL_AUTH_STATE);
-  return <form action={action} className="space-y-4" aria-label="Restablecer contraseña de operador">{!hasToken && state.status === "idle" ? <Status state={{ status: "error", message: "El enlace no es válido o ya venció." }} /> : null}<PasswordField id="new-password" name="password" label="Nueva contraseña" autoComplete="new-password" error={state.fieldErrors?.password} /><PasswordField id="confirmation" name="confirmation" label="Repite la contraseña" autoComplete="new-password" /><Status state={state} />{state.status === "success" ? <Link href="/login" className={buttonVariants({ className: "h-11 w-full" })}>Volver al acceso</Link> : <Submit pending={pending}>Guardar contraseña</Submit>}</form>;
+  const [state, action, pending] = useActionState(withFeedbackToast(resetAdminPasswordAction), INITIAL_AUTH_STATE);
+  return <form action={action} className="space-y-4" aria-label="Restablecer contraseña de operador">{!hasToken && state.status === "idle" ? <><FeedbackToast status="error" message="El enlace no es válido o ya venció." /><Status state={{ status: "error", message: "El enlace no es válido o ya venció." }} /></> : null}<PasswordField id="new-password" name="password" label="Nueva contraseña" autoComplete="new-password" error={state.fieldErrors?.password} /><PasswordField id="confirmation" name="confirmation" label="Repite la contraseña" autoComplete="new-password" /><Status state={state} />{state.status === "success" ? <Link href="/login" className={buttonVariants({ className: "h-11 w-full" })}>Volver al acceso</Link> : <Submit pending={pending}>Guardar contraseña</Submit>}</form>;
 }
 
 export function AdminVerifyForm({ hasCode, next }: { hasCode: boolean; next: string }) {
-  const [state, action, pending] = useActionState(confirmAdminEmailAction, INITIAL_AUTH_STATE);
-  const [retry, retryAction, retryPending] = useActionState(resendAdminVerificationAction, INITIAL_AUTH_STATE);
+  const [state, action, pending] = useActionState(withFeedbackToast(confirmAdminEmailAction), INITIAL_AUTH_STATE);
+  const [retry, retryAction, retryPending] = useActionState(withFeedbackToast(resendAdminVerificationAction), INITIAL_AUTH_STATE);
   return <div className="space-y-4"><form action={action} className="space-y-4" aria-label="Verificación de correo de operador">{!hasCode ? <div className="space-y-2"><Label htmlFor="verification-code">Código</Label><Input id="verification-code" name="code" autoComplete="one-time-code" className="h-11" required /></div> : null}<Status state={state} />{state.status === "success" ? <Link href={`/login?next=${encodeURIComponent(next)}`} className={buttonVariants({ className: "h-11 w-full" })}>Iniciar sesión</Link> : <Submit pending={pending}>Verificar correo</Submit>}</form>{state.status !== "success" ? <form action={retryAction}><Button type="submit" variant="outline" className="h-11 w-full" disabled={retryPending}>{retryPending ? "Enviando…" : "Enviar otro código"}</Button><Status state={retry} /></form> : null}</div>;
 }

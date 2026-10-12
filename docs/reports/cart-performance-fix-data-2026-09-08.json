@@ -1,0 +1,551 @@
+{
+  "date": "2026-09-08",
+  "baseline": {
+    "commit": "6ed1756",
+    "firstAddUiMs": 14532.8,
+    "existingAddUiMs": 10429.2,
+    "apiAddMs": [
+      7966,
+      6943
+    ],
+    "rscRefreshMs": [
+      2383,
+      2163
+    ]
+  },
+  "regionOnly": {
+    "commit": "6ed1756",
+    "deployment": "e640ecb3-107c-4632-b59a-a6441e6cd2f8",
+    "region": "us-west2",
+    "clientMs": [
+      5343.207,
+      4685.1415,
+      4080.4443,
+      3920.1391
+    ],
+    "railwayHttpMs": [
+      4603,
+      3996,
+      3394,
+      3373
+    ],
+    "notes": [
+      "First sample inserts into empty QA cart; subsequent samples increment existing line.",
+      "Sequential duration samples, not a load test or p95."
+    ]
+  },
+  "optimized": {
+    "apiCommit": "d375ad3",
+    "apiDeployment": "8be29e90-4ea8-4799-b469-e443a7c948dc",
+    "webCommit": "d375ad3",
+    "webDeployment": "50220d91-353e-4f27-bcf2-360ca22ac7ca",
+    "sdkClientMs": [
+      3388.1941,
+      3023.0925,
+      3141.364
+    ],
+    "sdkApiHttpMs": [
+      2703,
+      2491,
+      2464
+    ],
+    "nativeResponseBytes": 74,
+    "existingAddUiMs": 3064.8,
+    "existingAddApiPreflightMs": 145,
+    "existingAddApiMutationMs": 2519,
+    "existingAddResourceMs": 3057.2,
+    "existingAddBrowserFetches": [
+      "POST /api/cart/items"
+    ],
+    "existingAddLongTasks": 0,
+    "cartQuantityUpdateUiMs": 3606,
+    "cartQuantityUpdateResourceMs": 3593.1,
+    "notes": [
+      "Cart update also triggered small framework prefetches; no claim of zero network traffic for quantity changes."
+    ]
+  },
+  "finalWeb": {
+    "commit": "9c51bbd",
+    "deployment": "5ad9ff9e-db09-4dc1-8624-98647ab7aafb",
+    "apiCommit": "d375ad3",
+    "existingAddUiMs": [
+      2947.2,
+      3037.1,
+      2899.5
+    ],
+    "existingAddFetchMs": [
+      2938.2,
+      3031.7,
+      2895.2
+    ],
+    "firstCartUiMs": 4185.2,
+    "firstCartFetchMs": 4177.1,
+    "longTasksDuringAdd": 0,
+    "addressToShippingUiMs": 5418.7,
+    "shippingToPaymentUiMs": 6608.8,
+    "notes": [
+      "Third add sample was the inventory boundary probe: it exposed pre-existing incremental inventory validation bug.",
+      "Address sample reused the existing QA address; shipping sample selected an option; no payment was initiated.",
+      "Checkout navigation still produces framework prefetches plus RSC; only explicit duplicate refresh calls were removed."
+    ]
+  },
+  "publishedRemoval": {
+    "webCommit": "9c51bbd",
+    "uiMs": 1923.2,
+    "resourceMs": 1904,
+    "finalCount": 0
+  },
+  "userCartCompatibility": {
+    "environment": "Existing local Next development server on localhost:3000, temporarily pointed to production API in us-west2; not production browser latency",
+    "increaseUiMs": 6551.1,
+    "decreaseUiMs": 5467.7,
+    "removeUiMs": 3658.3,
+    "confirmedQuantities": [
+      1,
+      2,
+      1,
+      0
+    ],
+    "resourceMs": [
+      6482,
+      5436,
+      3628.9
+    ],
+    "publicEnvRestoredExactly": true,
+    "availabilityQuery": {
+      "baselineClientMs": [
+        1214,
+        674,
+        647
+      ],
+      "leanClientMs": [
+        745,
+        486,
+        475
+      ],
+      "baselineBytes": 2260,
+      "leanBytes": 563,
+      "stock": 20
+    }
+  },
+  "finalDeployment": {
+    "commit": "88a4754",
+    "api": "605dc29d-399f-4a36-be1b-b866966a249b",
+    "web": "8c0934eb-2786-4b8a-ba64-6d7c5a21a778",
+    "worker": "d359f68b-55dc-4027-a0a5-d978439775f6",
+    "allFiveServicesSuccessful": true,
+    "browser": [
+      {
+        "fetches": [
+          {
+            "headersAt": 8250.899999976158,
+            "method": "POST",
+            "path": "/api/cart/items",
+            "start": 5236.599999964237,
+            "status": 200
+          }
+        ],
+        "final": {
+          "button": "Agregar al carrito",
+          "cart": "Ver carrito, 1 productos",
+          "disabled": false,
+          "success": true
+        },
+        "resources": [
+          {
+            "bytes": 385,
+            "duration": 3011.7999999523163,
+            "path": "/api/cart/items",
+            "start": 5238,
+            "ttfb": 3011.199999988079,
+            "type": "fetch"
+          }
+        ],
+        "started": "2026-09-08T21:02:16.137Z",
+        "uiMs": 3020.100000023842
+      },
+      {
+        "fetches": [
+          {
+            "headersAt": 15787.899999976158,
+            "method": "POST",
+            "path": "/cart",
+            "start": 12854.099999964235,
+            "status": 200
+          },
+          {
+            "headersAt": 16294.099999964235,
+            "method": "GET",
+            "path": "/?category_id=pcat_01M1QQXKRZEJN208SNG8MPAQ8C&_rsc=_i_aeImnuN6u1u1r",
+            "start": 16113.099999964235,
+            "status": 200
+          },
+          {
+            "headersAt": 16288.299999952316,
+            "method": "GET",
+            "path": "/products/producto-1?_rsc=_i_aeImnuN6u1u1r",
+            "start": 16113.399999976158,
+            "status": 200
+          },
+          {
+            "headersAt": 16288.69999998808,
+            "method": "GET",
+            "path": "/checkout?_rsc=_i_aeImnuN6u1u1r",
+            "start": 16113.5,
+            "status": 200
+          },
+          {
+            "headersAt": 16288.599999964235,
+            "method": "GET",
+            "path": "/?_rsc=_i_aeImnuN6u1u1r",
+            "start": 16113.69999998808,
+            "status": 200
+          },
+          {
+            "headersAt": 16453.5,
+            "method": "GET",
+            "path": "/products/producto-1?_rsc=z0wyxdPQsgvRMaIZ",
+            "start": 16289.299999952316,
+            "status": 200
+          },
+          {
+            "headersAt": 16463.299999952316,
+            "method": "GET",
+            "path": "/login?_rsc=z0wyxdPQsgvRMaIZ",
+            "start": 16289.69999998808,
+            "status": 200
+          },
+          {
+            "headersAt": 16455.19999998808,
+            "method": "GET",
+            "path": "/?category_id=pcat_01M1QQXKRZEJN208SNG8MPAQ8C&_rsc=XtGPxDbe_Mfh2O43",
+            "start": 16290.599999964235,
+            "status": 200
+          },
+          {
+            "headersAt": 16463.5,
+            "method": "GET",
+            "path": "/checkout?_rsc=XtGPxDbe_Mfh2O43",
+            "start": 16294.799999952316,
+            "status": 200
+          },
+          {
+            "headersAt": 16623.69999998808,
+            "method": "GET",
+            "path": "/products/producto-1?_rsc=XtGPxDbe_Mfh2O43",
+            "start": 16458,
+            "status": 200
+          },
+          {
+            "headersAt": 16627.899999976158,
+            "method": "GET",
+            "path": "/login?_rsc=XtGPxDbe_Mfh2O43",
+            "start": 16464.399999976158,
+            "status": 200
+          }
+        ],
+        "final": {
+          "buttons": [
+            {
+              "disabled": false,
+              "text": "Actualizar"
+            },
+            {
+              "disabled": false,
+              "text": "Eliminar"
+            }
+          ],
+          "headings": [
+            "Tu carrito",
+            "Producto 1",
+            "Tu pedido"
+          ],
+          "path": "/cart"
+        },
+        "resources": [
+          {
+            "bytes": 8470,
+            "duration": 3366.600000023842,
+            "path": "/cart",
+            "start": 12854.599999964235,
+            "ttfb": 2931.900000035763,
+            "type": "fetch"
+          },
+          {
+            "bytes": 498,
+            "duration": 180.20000004768372,
+            "path": "/",
+            "start": 16113.299999952316,
+            "ttfb": 179.9000000357628,
+            "type": "fetch"
+          },
+          {
+            "bytes": 484,
+            "duration": 175.29999995231628,
+            "path": "/products/producto-1",
+            "start": 16113.5,
+            "ttfb": 173.39999997615814,
+            "type": "fetch"
+          },
+          {
+            "bytes": 467,
+            "duration": 173.89999997615814,
+            "path": "/checkout",
+            "start": 16113.69999998808,
+            "ttfb": 173.69999998807907,
+            "type": "fetch"
+          },
+          {
+            "bytes": 458,
+            "duration": 173.60000002384186,
+            "path": "/",
+            "start": 16113.899999976158,
+            "ttfb": 173.39999997615814,
+            "type": "fetch"
+          },
+          {
+            "bytes": 484,
+            "duration": 167.69999998807907,
+            "path": "/products/producto-1",
+            "start": 16289.399999976158,
+            "ttfb": 163.39999997615814,
+            "type": "fetch"
+          },
+          {
+            "bytes": 465,
+            "duration": 172.5,
+            "path": "/login",
+            "start": 16289.899999976158,
+            "ttfb": 171.89999997615814,
+            "type": "fetch"
+          },
+          {
+            "bytes": 1119,
+            "duration": 171.80000001192093,
+            "path": "/",
+            "start": 16290.799999952316,
+            "ttfb": 163.80000001192093,
+            "type": "fetch"
+          },
+          {
+            "bytes": 1109,
+            "duration": 167.79999995231628,
+            "path": "/checkout",
+            "start": 16295,
+            "ttfb": 167.19999998807907,
+            "type": "fetch"
+          },
+          {
+            "bytes": 1016,
+            "duration": 426.300000011921,
+            "path": "/products/producto-1",
+            "start": 16458.19999998808,
+            "ttfb": 164.5999999642372,
+            "type": "fetch"
+          },
+          {
+            "bytes": 1081,
+            "duration": 162.69999998807907,
+            "path": "/login",
+            "start": 16464.5,
+            "ttfb": 162.19999998807907,
+            "type": "fetch"
+          }
+        ],
+        "started": "2026-09-08T21:02:23.718Z",
+        "uiMs": 3375.600000023842
+      },
+      {
+        "fetches": [
+          {
+            "headersAt": 19535.099999964237,
+            "method": "POST",
+            "path": "/cart",
+            "start": 17875.69999998808,
+            "status": 200
+          },
+          {
+            "headersAt": 20022.099999964237,
+            "method": "GET",
+            "path": "/?_rsc=z0wyxdPQsgvRMaIZ",
+            "start": 19849.39999997616,
+            "status": 200
+          },
+          {
+            "headersAt": 20016.39999997616,
+            "method": "GET",
+            "path": "/?category_id=pcat_01M1QQXKRZEJN208SNG8MPAQ8C&_rsc=z0wyxdPQsgvRMaIZ",
+            "start": 19849.69999998808,
+            "status": 200
+          },
+          {
+            "headersAt": 20012.39999997616,
+            "method": "GET",
+            "path": "/login?_rsc=z0wyxdPQsgvRMaIZ",
+            "start": 19849.799999952316,
+            "status": 200
+          },
+          {
+            "headersAt": 20191.099999964237,
+            "method": "GET",
+            "path": "/login?_rsc=XtGPxDbe_Mfh2O43",
+            "start": 20022.5,
+            "status": 200
+          },
+          {
+            "headersAt": 20184.89999997616,
+            "method": "GET",
+            "path": "/?category_id=pcat_01M1QQXKRZEJN208SNG8MPAQ8C&_rsc=XtGPxDbe_Mfh2O43",
+            "start": 20023.099999964237,
+            "status": 200
+          },
+          {
+            "headersAt": 20187.299999952316,
+            "method": "GET",
+            "path": "/?_rsc=XtGPxDbe_Mfh2O43",
+            "start": 20023.5,
+            "status": 200
+          }
+        ],
+        "final": {
+          "buttons": [],
+          "headings": [
+            "Tu carrito",
+            "Tu carrito está vacío"
+          ],
+          "path": "/cart"
+        },
+        "resources": [
+          {
+            "bytes": 7064,
+            "duration": 1862.699999988079,
+            "path": "/cart",
+            "start": 17875.899999976158,
+            "ttfb": 1658,
+            "type": "fetch"
+          },
+          {
+            "bytes": 458,
+            "duration": 171.69999998807907,
+            "path": "/",
+            "start": 19849.69999998808,
+            "ttfb": 171.39999997615814,
+            "type": "fetch"
+          },
+          {
+            "bytes": 498,
+            "duration": 171.10000002384186,
+            "path": "/",
+            "start": 19849.799999952316,
+            "ttfb": 165.80000001192093,
+            "type": "fetch"
+          },
+          {
+            "bytes": 465,
+            "duration": 170.80000001192093,
+            "path": "/login",
+            "start": 19849.89999997616,
+            "ttfb": 161.69999998807907,
+            "type": "fetch"
+          },
+          {
+            "bytes": 1081,
+            "duration": 167.5,
+            "path": "/login",
+            "start": 20022.69999998808,
+            "ttfb": 167.0999999642372,
+            "type": "fetch"
+          },
+          {
+            "bytes": 1118,
+            "duration": 167,
+            "path": "/",
+            "start": 20023.099999964237,
+            "ttfb": 160.9000000357628,
+            "type": "fetch"
+          },
+          {
+            "bytes": 1062,
+            "duration": 166.69999998807907,
+            "path": "/",
+            "start": 20023.599999964237,
+            "ttfb": 162.9000000357628,
+            "type": "fetch"
+          }
+        ],
+        "started": "2026-09-08T21:02:28.787Z",
+        "uiMs": 1869.100000023842
+      },
+      {
+        "cart": "Ver carrito, 0 productos",
+        "path": "/products/producto-1"
+      }
+    ],
+    "apiHttpMs": {
+      "addPreflight": 127,
+      "addMutation": 2527,
+      "updatePreflight": 141,
+      "updateMutation": 2446,
+      "updateRenderCart": 351,
+      "deletePreflight": 140,
+      "deleteMutation": 1128,
+      "deleteRenderCart": 194
+    },
+    "stockVerification": {
+      "stockBoundaryVerified": true,
+      "qaCartEmpty": true,
+      "rows": [
+        {
+          "name": "seed_12",
+          "started": "2026-09-08T21:00:58.736Z",
+          "durationMs": 4212.7904,
+          "success": true
+        },
+        {
+          "name": "reject_12_plus_20",
+          "started": "2026-09-08T21:01:02.959Z",
+          "durationMs": 1447.4043000000001,
+          "success": true
+        },
+        {
+          "name": "accept_12_plus_8",
+          "started": "2026-09-08T21:01:04.777Z",
+          "durationMs": 4038.8894,
+          "success": true
+        },
+        {
+          "name": "reject_update_21",
+          "started": "2026-09-08T21:01:08.816Z",
+          "durationMs": 5604.2217,
+          "success": true
+        },
+        {
+          "name": "update_2",
+          "started": "2026-09-08T21:01:15.202Z",
+          "durationMs": 3966.1571000000004,
+          "success": true
+        },
+        {
+          "name": "cleanup_delete",
+          "started": "2026-09-08T21:01:19.509Z",
+          "durationMs": 2312.6530999999995,
+          "success": true
+        }
+      ]
+    },
+    "cleanup": {
+      "bothQaCartsEmpty": true,
+      "ordersCreated": 0,
+      "paymentSessions": 0
+    },
+    "validation": {
+      "webTests": 100,
+      "apiTests": 597,
+      "packagingTests": 3,
+      "lint": true,
+      "typecheck": true,
+      "build": true,
+      "peers": true
+    }
+  }
+}

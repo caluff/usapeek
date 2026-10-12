@@ -1,4 +1,5 @@
 import { MedusaError } from "@medusajs/framework/utils";
+import { getEmailSender } from "./email-sender";
 
 export type AuthActor = "customer" | "user" | "member";
 export type AuthEmailKind = "password-reset" | "email-verification";
@@ -7,6 +8,7 @@ type AuthEmailEnvironment = Partial<
   Record<
     | "AUTH_EMAIL_ENABLED"
     | "AUTH_EMAIL_FROM"
+    | "RESEND_FROM_EMAIL"
     | "STOREFRONT_URL"
     | "ADMIN_URL"
     | "VENDOR_URL",
@@ -46,11 +48,11 @@ export function getAuthEmailConfiguration(
     return { enabled: false as const };
   }
 
-  const from = environment.AUTH_EMAIL_FROM?.trim();
+  const from = getEmailSender(environment);
   if (!from) {
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
-      "[auth-email] AUTH_EMAIL_FROM is required when AUTH_EMAIL_ENABLED=true",
+      "[auth-email] RESEND_FROM_EMAIL (or AUTH_EMAIL_FROM) is required when AUTH_EMAIL_ENABLED=true",
     );
   }
 

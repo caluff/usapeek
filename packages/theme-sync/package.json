@@ -1,0 +1,17 @@
+{
+  "name": "@usapeek/theme-sync",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./theme-sync.tsx"
+  },
+  "peerDependencies": {
+    "next-themes": "0.4.6",
+    "react": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "tsx": "4.23.15"
+  }
+}

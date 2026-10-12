@@ -1,4 +1,4 @@
-import { Boxes } from "lucide-react";
+import { Logo } from "@/components/brand/logo";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -12,21 +12,26 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getCurrentAdmin } from "@/lib/auth-sdk";
+import { GoogleLoginForm } from "@/components/admin/google-login-form";
+import { googleFeedback } from "@/lib/google-auth";
+import { getAdminMfa } from "@/lib/auth-sdk";
 import { safeRedirectPath } from "@/lib/auth-utils";
 
 export const metadata: Metadata = {
-  title: "Acceso | Marketplace Admin",
+  title: "Acceso",
   description: "Acceso seguro para operadores del marketplace.",
 };
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; reason?: string }>;
+  searchParams: Promise<{ next?: string; reason?: string; google?: string }>;
 }) {
   const params = await searchParams;
+  const mfa = params.google === "mfa" ? await getAdminMfa() : null;
+  const googleMessage = googleFeedback(params.google);
   const next = safeRedirectPath(params.next, "/dashboard");
-  if (await getCurrentAdmin()) redirect(next);
+  if (!mfa && await getCurrentAdmin()) redirect(next);
 
   return (
     <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-sidebar px-4 py-10 text-sidebar-foreground">
@@ -37,12 +42,7 @@ export default async function LoginPage({
       />
       <div className="relative w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
-          <span className="mb-4 grid size-11 place-items-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-lg">
-            <Boxes className="size-5" aria-hidden="true" />
-          </span>
-          <p className="text-base font-semibold tracking-[-0.02em]">
-            Marketplace Admin
-          </p>
+          <Logo width={220} tone="dark" className="mb-4 h-auto" />
           <p className="mt-1 text-xs text-sidebar-muted">
             Espacio de operaciones
           </p>
@@ -57,10 +57,13 @@ export default async function LoginPage({
             </CardDescription>
           </CardHeader>
           <CardContent className="px-6 pb-6 pt-2">
+            {googleMessage ? <p role="status" className="mb-4 text-sm">{googleMessage}</p> : null}
             <AdminLoginForm
               next={next}
               expired={params.reason === "expired"}
+              mfaMethods={mfa?.methods}
             />
+            {!mfa ? <GoogleLoginForm next={next} /> : null}
           </CardContent>
         </Card>
       </div>

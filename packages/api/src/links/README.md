@@ -1,26 +1,17 @@
-# Module Links
+# Module links
 
-A module link forms an association between two data models of different modules, while maintaining module isolation.
+Three local links expose vendor application associations through Medusa Query:
 
-> Learn more about links in [this documentation](https://docs.medusajs.com/learn/fundamentals/module-links)
+| File                             | Association                                   |
+| -------------------------------- | --------------------------------------------- |
+| `vendor-application-customer.ts` | Application `customer_id` to native customer. |
+| `vendor-application-member.ts`   | Application `member_id` to Mercur member.     |
+| `vendor-application-seller.ts`   | Application `seller_id` to Mercur seller.     |
 
-For example:
+These definitions use `readOnly: true` and existing application fields; they are
+not general writable link tables. Other marketplace links come from installed
+Mercur modules.
 
-```ts
-import BlogModule from "../modules/blog"
-import ProductModule from "@medusajs/medusa/product"
-import { defineLink } from "@medusajs/framework/utils"
-
-export default defineLink(
-  ProductModule.linkable.product,
-  BlogModule.linkable.post
-)
-```
-
-This defines a link between the Product Module's `product` data model and the Blog Module (custom module)'s `post` data model.
-
-Then, in the Medusa application, run the following command to sync the links to the database:
-
-```bash
-npx medusa db:migrate
-```
+Inspect native and local definitions before adding relationships. Follow
+[repository rules](../../../../AGENTS.md) for module boundaries and migrations.
+Do not introduce direct cross-module calls or run migrations for a docs refresh.

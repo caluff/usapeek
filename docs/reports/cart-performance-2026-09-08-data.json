@@ -1,0 +1,719 @@
+{
+  "date": "2026-09-08",
+  "commit": "6ed1756",
+  "apiDeployment": "61bbdf4a-8a46-41eb-907d-ea8a0d523dc3",
+  "units": "milliseconds unless stated",
+  "browser": [
+    {
+      "scenario": "first add new cart",
+      "visibleMs": 14532.8,
+      "actionTtfbMs": 12146.4,
+      "actionResponseMs": 14517.2,
+      "regionApiMs": 353,
+      "createApiMs": 3619,
+      "addApiMs": 7966,
+      "refreshWindowMs": 2383
+    },
+    {
+      "scenario": "add existing cart",
+      "visibleMs": 10429.2,
+      "actionTtfbMs": 8270.1,
+      "actionResponseMs": 10414.3,
+      "readApiMs": 1122,
+      "addApiMs": 6943,
+      "refreshWindowMs": 2163,
+      "longTasksDuringInteraction": 0
+    },
+    {
+      "scenario": "save address until shipping choices visible",
+      "visibleMs": 15134.1,
+      "readApiMs": 1018,
+      "updateApiMs": 9175,
+      "postMutationCartReads": 4,
+      "postMutationCategoryReads": 3,
+      "postMutationShippingReads": 3,
+      "shippingReadApiMs": [
+        2515,
+        2707,
+        2650
+      ]
+    },
+    {
+      "scenario": "save shipping failure",
+      "visibleMs": 4653.5,
+      "error": "Map.groupBy is not a function",
+      "shippingPostSent": false
+    }
+  ],
+  "isolatedAdd": {
+    "productionClientMs": 8572.6391,
+    "productionApiMs": 7951,
+    "localApiToSameDbMs": 22021.6712,
+    "responseJsonBytes": 2251,
+    "businessSqlCalls": 89,
+    "businessSqlExecutionMs": 15.982633
+  },
+  "cartProjectionComparison": {
+    "order": [
+      "full",
+      "guard",
+      "counter"
+    ],
+    "full": {
+      "apiMs": [
+        2205,
+        1276,
+        1173
+      ],
+      "clientMs": [
+        2817.2353,
+        1443.2362,
+        1349.8464
+      ],
+      "jsonBytes": 5047
+    },
+    "guard": {
+      "apiMs": [
+        470,
+        449,
+        432
+      ],
+      "clientMs": [
+        928.9274,
+        616.2544,
+        595.3769
+      ],
+      "jsonBytes": 214,
+      "fields": "id,currency_code,completed_at,region.countries.iso_2"
+    },
+    "counter": {
+      "apiMs": [
+        371,
+        347,
+        344
+      ],
+      "clientMs": [
+        531.1055,
+        504.172,
+        514.581
+      ],
+      "jsonBytes": 74,
+      "fields": "id,items.quantity"
+    }
+  },
+  "infrastructure": {
+    "apiRegion": "us-east4-eqdc4a",
+    "webRegion": "us-east4-eqdc4a",
+    "webNode": "20.20.2",
+    "localNode": "24.18.0",
+    "perRequestQueryTracing": false,
+    "databasePoolerRegion": "us-west-2"
+  },
+  "sqlWindow": {
+    "from": "2026-09-08T18:55:08.825Z",
+    "to": "2026-09-08T18:56:11.114Z",
+    "redis_commands": 3,
+    "total_calls": 111,
+    "total_exec_ms": 17.874056999999585,
+    "table_calls": 103,
+    "table_exec_ms": 17.51719199999958,
+    "delta": [
+      {
+        "id": "752375239713093107",
+        "calls": 10,
+        "exec_ms": 1.1372430000000122,
+        "operation": "SELECT",
+        "tables": [
+          "workflow_execution"
+        ]
+      },
+      {
+        "id": "3393632725691790249",
+        "calls": 4,
+        "exec_ms": 0.39731599999959144,
+        "operation": "SELECT",
+        "tables": [
+          "get_auth"
+        ]
+      },
+      {
+        "id": "-7922997972977806732",
+        "calls": 4,
+        "exec_ms": 0.25910999999999973,
+        "operation": "SELECT",
+        "tables": [
+          "cart_promotion"
+        ]
+      },
+      {
+        "id": "6226329061870596326",
+        "calls": 4,
+        "exec_ms": 0.122524999999996,
+        "operation": "SET",
+        "tables": []
+      },
+      {
+        "id": "-1095925979366052188",
+        "calls": 4,
+        "exec_ms": 0.11119499999999993,
+        "operation": "SELECT",
+        "tables": [
+          "credit_line"
+        ]
+      },
+      {
+        "id": "122121306806775519",
+        "calls": 3,
+        "exec_ms": 0.4680579999999992,
+        "operation": "SELECT",
+        "tables": [
+          "cart_payment_collection"
+        ]
+      },
+      {
+        "id": "5541624110737886994",
+        "calls": 3,
+        "exec_ms": 0.33939300000000117,
+        "operation": "SELECT",
+        "tables": [
+          "cart_line_item"
+        ]
+      },
+      {
+        "id": "-378063347577672241",
+        "calls": 3,
+        "exec_ms": 0.03315200000000007,
+        "operation": "SELECT",
+        "tables": [
+          "cart_line_item_tax_line"
+        ]
+      },
+      {
+        "id": "-7785751821267762728",
+        "calls": 3,
+        "exec_ms": 0.20107699999999973,
+        "operation": "SELECT",
+        "tables": [
+          "shipping_profile"
+        ]
+      },
+      {
+        "id": "24177895458992734",
+        "calls": 3,
+        "exec_ms": 0.09024300000000096,
+        "operation": "SELECT",
+        "tables": [
+          "cart_shipping_method"
+        ]
+      },
+      {
+        "id": "7465662211383560676",
+        "calls": 3,
+        "exec_ms": 0.4825399999999984,
+        "operation": "SELECT",
+        "tables": [
+          "product_category_product",
+          "product_category"
+        ]
+      },
+      {
+        "id": "-2406028901315559658",
+        "calls": 3,
+        "exec_ms": 0.06317300000000015,
+        "operation": "SELECT",
+        "tables": [
+          "product_tags",
+          "product_tag"
+        ]
+      },
+      {
+        "id": "1286603489507630901",
+        "calls": 3,
+        "exec_ms": 0.03666199999999975,
+        "operation": "SELECT",
+        "tables": [
+          "cart_line_item_adjustment"
+        ]
+      },
+      {
+        "id": "-2836742934530549735",
+        "calls": 3,
+        "exec_ms": 0.20146800000000198,
+        "operation": "SELECT",
+        "tables": [
+          "product_shipping_profile"
+        ]
+      },
+      {
+        "id": "-2014853950230402459",
+        "calls": 2,
+        "exec_ms": 0.08844399999999997,
+        "operation": "SELECT",
+        "tables": [
+          "product_variant",
+          "product"
+        ]
+      },
+      {
+        "id": "-5914322608399003900",
+        "calls": 2,
+        "exec_ms": 0.06405200000000022,
+        "operation": "SELECT",
+        "tables": [
+          "cart"
+        ]
+      },
+      {
+        "id": "-8588238103546230463",
+        "calls": 2,
+        "exec_ms": 0.0597019999999997,
+        "operation": "SELECT",
+        "tables": [
+          "region"
+        ]
+      },
+      {
+        "id": "-2073166519428774482",
+        "calls": 2,
+        "exec_ms": 0.23157900000001064,
+        "operation": "DISCARD",
+        "tables": []
+      },
+      {
+        "id": "-5885516460047446375",
+        "calls": 2,
+        "exec_ms": 0.23205999999999993,
+        "operation": "SELECT",
+        "tables": [
+          "product"
+        ]
+      },
+      {
+        "id": "-7837824548213068631",
+        "calls": 2,
+        "exec_ms": 0.04057200000000005,
+        "operation": "SELECT",
+        "tables": [
+          "offer"
+        ]
+      },
+      {
+        "id": "7565382014297467374",
+        "calls": 2,
+        "exec_ms": 0.1930569999999996,
+        "operation": "SELECT",
+        "tables": [
+          "cart_line_item_offer_offer"
+        ]
+      },
+      {
+        "id": "7903711110794251115",
+        "calls": 2,
+        "exec_ms": 0.09583399999999997,
+        "operation": "SELECT",
+        "tables": [
+          "cart",
+          "cart_address"
+        ]
+      },
+      {
+        "id": "6798511224055781571",
+        "calls": 1,
+        "exec_ms": 0.017801000000000067,
+        "operation": "SELECT",
+        "tables": [
+          "tax_region"
+        ]
+      },
+      {
+        "id": "627916174294072145",
+        "calls": 1,
+        "exec_ms": 0.17331700000000083,
+        "operation": "SELECT",
+        "tables": [
+          "price_set"
+        ]
+      },
+      {
+        "id": "11701968915743190",
+        "calls": 1,
+        "exec_ms": 0.0011609999999997456,
+        "operation": "BEGIN",
+        "tables": []
+      },
+      {
+        "id": "-2835399305386018931",
+        "calls": 1,
+        "exec_ms": 0.0015999999999998238,
+        "operation": "COMMIT",
+        "tables": []
+      },
+      {
+        "id": "-3776537894476807158",
+        "calls": 1,
+        "exec_ms": 0.09092300000000009,
+        "operation": "SELECT",
+        "tables": [
+          "cart",
+          "cart_address"
+        ]
+      },
+      {
+        "id": "3060088707811642844",
+        "calls": 1,
+        "exec_ms": 0.09855400000000003,
+        "operation": "SELECT",
+        "tables": [
+          "sales_channel"
+        ]
+      },
+      {
+        "id": "6322472324595334155",
+        "calls": 1,
+        "exec_ms": 0.04704100000000011,
+        "operation": "SELECT",
+        "tables": [
+          "cart_line_item"
+        ]
+      },
+      {
+        "id": "203722301707606767",
+        "calls": 1,
+        "exec_ms": 0.12081399999999975,
+        "operation": "SELECT",
+        "tables": [
+          "promotion",
+          "promotion_promotion_rule",
+          "promotion_application_method",
+          "application_method_target_rules",
+          "application_method_buy_rules"
+        ]
+      },
+      {
+        "id": "3465243819342810452",
+        "calls": 1,
+        "exec_ms": 0.14448499999999997,
+        "operation": "SELECT",
+        "tables": [
+          "seller"
+        ]
+      },
+      {
+        "id": "1908740108788423989",
+        "calls": 1,
+        "exec_ms": 0.07387200000000016,
+        "operation": "SELECT",
+        "tables": [
+          "inventory_level"
+        ]
+      },
+      {
+        "id": "5756425742927550375",
+        "calls": 1,
+        "exec_ms": 0.029471999999999998,
+        "operation": "SELECT",
+        "tables": [
+          "cart_shipping_method"
+        ]
+      },
+      {
+        "id": "-64175034875008331",
+        "calls": 1,
+        "exec_ms": 0.06862199999999996,
+        "operation": "SELECT",
+        "tables": [
+          "cart_line_item"
+        ]
+      },
+      {
+        "id": "-1342720350572201382",
+        "calls": 1,
+        "exec_ms": 0.011761000000000021,
+        "operation": "SELECT",
+        "tables": [
+          "cart_line_item_adjustment"
+        ]
+      },
+      {
+        "id": "155934392714469180",
+        "calls": 1,
+        "exec_ms": 0.08248299999999986,
+        "operation": "SELECT",
+        "tables": [
+          "product_variant_price_set"
+        ]
+      },
+      {
+        "id": "-7747090394844789379",
+        "calls": 1,
+        "exec_ms": 0.14091599999997584,
+        "operation": "SELECT",
+        "tables": [
+          "publishable_api_key_sales_channel"
+        ]
+      },
+      {
+        "id": "3490691385498091067",
+        "calls": 1,
+        "exec_ms": 0.05969200000000008,
+        "operation": "SELECT",
+        "tables": [
+          "price_rule"
+        ]
+      },
+      {
+        "id": "-5984481757645779349",
+        "calls": 1,
+        "exec_ms": 2.116772,
+        "operation": "SELECT",
+        "tables": [
+          "price",
+          "price_list",
+          "price_list_rule",
+          "LATERAL",
+          "price_rule"
+        ]
+      },
+      {
+        "id": "-4041214061409549646",
+        "calls": 1,
+        "exec_ms": 0.01917100000000005,
+        "operation": "SELECT",
+        "tables": [
+          "offer"
+        ]
+      },
+      {
+        "id": "-4814442054205553866",
+        "calls": 1,
+        "exec_ms": 0.025251000000000023,
+        "operation": "SELECT",
+        "tables": [
+          "offer"
+        ]
+      },
+      {
+        "id": "-32465865009214762",
+        "calls": 1,
+        "exec_ms": 0.054423,
+        "operation": "SELECT",
+        "tables": [
+          "offer"
+        ]
+      },
+      {
+        "id": "-4557140379478519100",
+        "calls": 1,
+        "exec_ms": 0.03446099999999985,
+        "operation": "SELECT",
+        "tables": [
+          "product_variant"
+        ]
+      },
+      {
+        "id": "3336257803627603026",
+        "calls": 1,
+        "exec_ms": 0.13392599999999888,
+        "operation": "SELECT",
+        "tables": [
+          "stock_location"
+        ]
+      },
+      {
+        "id": "-55663640621269588",
+        "calls": 1,
+        "exec_ms": 1.0078090000000088,
+        "operation": "SELECT",
+        "tables": [
+          "api_key"
+        ]
+      },
+      {
+        "id": "-2564081355749143406",
+        "calls": 1,
+        "exec_ms": 0.1612569999999902,
+        "operation": "SELECT",
+        "tables": [
+          "inventory_item"
+        ]
+      },
+      {
+        "id": "-4549248045303548992",
+        "calls": 1,
+        "exec_ms": 0.05008200000000018,
+        "operation": "SELECT",
+        "tables": [
+          "cart_line_item"
+        ]
+      },
+      {
+        "id": "7860854783844803213",
+        "calls": 1,
+        "exec_ms": 0.35362399999999994,
+        "operation": "SELECT",
+        "tables": [
+          "cart",
+          "cart_address"
+        ]
+      },
+      {
+        "id": "4144062816349193154",
+        "calls": 1,
+        "exec_ms": 0.06441299999999994,
+        "operation": "SELECT",
+        "tables": [
+          "inventory_level"
+        ]
+      },
+      {
+        "id": "-4697430673438475143",
+        "calls": 1,
+        "exec_ms": 0.02297100000000002,
+        "operation": "SELECT",
+        "tables": [
+          "inventory_item"
+        ]
+      },
+      {
+        "id": "-5230899199870570705",
+        "calls": 1,
+        "exec_ms": 0.908855,
+        "operation": "SELECT",
+        "tables": [
+          "product_variant",
+          "product",
+          "product_type",
+          "product_collection"
+        ]
+      },
+      {
+        "id": "4040799476116007000",
+        "calls": 1,
+        "exec_ms": 0.09977400000000003,
+        "operation": "SELECT",
+        "tables": [
+          "offer_inventory_item"
+        ]
+      },
+      {
+        "id": "-98492367617614955",
+        "calls": 1,
+        "exec_ms": 0.1393960000000014,
+        "operation": "SELECT",
+        "tables": [
+          "sales_channel_stock_location"
+        ]
+      },
+      {
+        "id": "-7492990847134569522",
+        "calls": 1,
+        "exec_ms": 0.1652869999999993,
+        "operation": "SELECT",
+        "tables": [
+          "price_preference"
+        ]
+      },
+      {
+        "id": "-5868253346428423502",
+        "calls": 1,
+        "exec_ms": 0.010060000000000013,
+        "operation": "SELECT",
+        "tables": [
+          "product_variant_inventory_item"
+        ]
+      },
+      {
+        "id": "-1103578081522380811",
+        "calls": 1,
+        "exec_ms": 0.010451000000000016,
+        "operation": "SELECT",
+        "tables": [
+          "cart_line_item_tax_line"
+        ]
+      },
+      {
+        "id": "-347290199937171566",
+        "calls": 1,
+        "exec_ms": 0.02239099999999994,
+        "operation": "SELECT",
+        "tables": [
+          "region"
+        ]
+      },
+      {
+        "id": "-5053125259405258280",
+        "calls": 1,
+        "exec_ms": 0.08004300000000009,
+        "operation": "SELECT",
+        "tables": [
+          "promotion_rule"
+        ]
+      },
+      {
+        "id": "1767738823122427229",
+        "calls": 1,
+        "exec_ms": 0.024981000000000364,
+        "operation": "SELECT",
+        "tables": [
+          "promotion",
+          "promotion_application_method",
+          "promotion_campaign",
+          "promotion_campaign_budget"
+        ]
+      },
+      {
+        "id": "-2743698812325696900",
+        "calls": 1,
+        "exec_ms": 6.110445,
+        "operation": "UPDATE",
+        "tables": [
+          "cart_line_item"
+        ]
+      },
+      {
+        "id": "8010888176801168362",
+        "calls": 1,
+        "exec_ms": 0.05140199999999995,
+        "operation": "SELECT",
+        "tables": [
+          "cart_line_item"
+        ]
+      },
+      {
+        "id": "-962636747184423790",
+        "calls": 1,
+        "exec_ms": 0.03551099999999996,
+        "operation": "SELECT",
+        "tables": [
+          "cart_line_item"
+        ]
+      },
+      {
+        "id": "-2406706189578992679",
+        "calls": 1,
+        "exec_ms": 0.026641000000000137,
+        "operation": "SELECT",
+        "tables": [
+          "product"
+        ]
+      },
+      {
+        "id": "-5959800272865681451",
+        "calls": 1,
+        "exec_ms": 0.033691,
+        "operation": "SELECT",
+        "tables": [
+          "cart_line_item"
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Small samples, no load test or p95.",
+    "SQL deltas are windowed global statistics, not request spans.",
+    "SQL execution excludes network, connection acquisition and framework time.",
+    "Query counts by table overlap for joins.",
+    "First projection read may include connection warmup.",
+    "Shipping save failed; no successful new payment/checkout completion measured."
+  ]
+}

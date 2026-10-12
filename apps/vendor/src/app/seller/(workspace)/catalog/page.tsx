@@ -1,33 +1,34 @@
 import type { Metadata } from "next";
-import { PackageSearch } from "lucide-react";
+import { Suspense } from "react";
+import { CatalogFilters } from "@/features/catalog/catalog-filters";
+import {
+  CatalogResults,
+  CatalogListSkeleton,
+} from "@/features/catalog/catalog-list";
+import { catalogListInput } from "@/features/catalog/parameters";
 
-import { DemoNotice } from "@/components/vendor/demo-notice";
-import { EmptyState } from "@/components/vendor/empty-state";
+export const metadata: Metadata = {
+  title: "Catálogo",
+  description: "Consulta y gestiona los productos disponibles en el catálogo de tu tienda en USAPEEK.",
+};
 
-export const metadata: Metadata = { title: "Catálogo" };
-
-export default function CatalogPage() {
+export default async function CatalogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    q?: string | string[];
+    page?: string | string[];
+    status?: string | string[];
+  }>;
+}) {
+  const input = catalogListInput(await searchParams);
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-          Catálogo
-        </p>
-        <h1 className="mt-2 font-display text-3xl tracking-tight">
-          Publicaciones de la tienda
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Esta ruta reserva el espacio para una futura vista acotada del
-          catálogo; todavía no permite crear ni editar publicaciones.
-        </p>
-      </div>
-      <DemoNotice />
-      <EmptyState
-        eyebrow="Módulo en preparación"
-        title="Aún no hay publicaciones en esta maqueta"
-        description="Cuando se conecte una fuente de datos autorizada, esta vista podrá mostrar publicaciones del vendedor. Por ahora no consulta ni modifica el catálogo real."
-        icon={PackageSearch}
-      />
+      <h1 className="sr-only">Catálogo</h1>
+      <CatalogFilters input={input} />
+      <Suspense key={JSON.stringify(input)} fallback={<CatalogListSkeleton />}>
+        <CatalogResults input={input} />
+      </Suspense>
     </div>
   );
 }

@@ -2,7 +2,13 @@ import type { NextConfig } from "next";
 
 function getServerActionAllowedOrigins() {
   const configured = process.env.SERVER_ACTIONS_ALLOWED_ORIGINS?.split(",") ?? [];
-  const candidates = [process.env.RAILWAY_PUBLIC_DOMAIN, ...configured];
+  const candidates = [
+    ...(configured.length ? configured : [process.env.RAILWAY_PUBLIC_DOMAIN]),
+    // Orca forwards this preview to localhost:7000 with a different host.
+    process.env.NODE_ENV === "development"
+      ? "marketplace-v2-3.orca.localhost:6136"
+      : undefined,
+  ];
 
   return candidates.flatMap((candidate) => {
     const value = candidate?.trim();
@@ -28,7 +34,21 @@ function getServerActionAllowedOrigins() {
 }
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@usapeek/ui", "@usapeek/order-reference"],
   reactStrictMode: true,
+  async headers() {
+    if (process.env.NODE_ENV !== "production") return [];
+
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "header", key: "x-forwarded-proto", value: "https" }],
+        headers: [
+          { key: "Strict-Transport-Security", value: "max-age=31536000" },
+        ],
+      },
+    ];
+  },
   experimental: {
     serverActions: {
       allowedOrigins: getServerActionAllowedOrigins(),

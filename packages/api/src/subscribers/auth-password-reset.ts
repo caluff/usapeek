@@ -1,5 +1,6 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework";
-import { MedusaError, Modules } from "@medusajs/framework/utils";
+import { MedusaError } from "@medusajs/framework/utils";
+import { authNotificationKey, deliverEmailNotification } from "../lib/deliver-email-notification";
 
 import {
   buildAuthEmailUrl,
@@ -34,13 +35,13 @@ export default async function authPasswordResetHandler({
     );
   }
 
-  const notificationService = container.resolve(Modules.NOTIFICATION);
-  await notificationService.createNotifications({
+  await deliverEmailNotification(container, {
     to: data.entity_id,
     from: emailConfig.from,
     channel: "email",
     template: "auth-password-reset",
     trigger_type: "auth.password_reset",
+    idempotency_key: authNotificationKey("password-reset", data.actor_type, data.entity_id, data.token),
     data: { reset_url: resetUrl },
   });
 }

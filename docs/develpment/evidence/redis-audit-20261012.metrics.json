@@ -1,0 +1,7488 @@
+{
+  "date": "2026-10-12",
+  "environment": "Owned disposable local Docker Redis 7.4; Medusa 2.21.2, Mercur 2.3.7, BullMQ 5.13.0; shared API and four workers",
+  "method": {
+    "baseline": "Same frozen workload and five source-file overlays, owned Redis DB15 cleared and its container restarted before each run; new PostgreSQL fixture database per run.",
+    "requests": "ioredis5/6 serialized requests, validated against a short MONITOR calibration; socket failure can prevent delivery. Not cloud billing.",
+    "executedCalls": "Redis INFO deltas include Lua internal calls; two observer commands excluded per window.",
+    "tails": "Post-action drain windows include native asynchronous work AND diagnostic queue probes. Do not treat them as pure production traffic.",
+    "resources": "CPU and network include observer overhead; memory is a gauge. Latencies are single local samples, not a controlled performance benchmark.",
+    "projection": "Linear projection of the measured 130-second idle window only, shared mode with empty business fixtures; excludes traffic and unobserved 15/30-minute jobs. Not Railway usage or cost."
+  },
+  "before": {
+    "run": "baseline-1791785453788",
+    "tests": [
+      "Test Suites: 1 passed, 1 total",
+      "Tests:       1 skipped, 2 passed, 3 total",
+      "Time:        231.18 s"
+    ],
+    "runtime": [
+      {
+        "stage": "before-idle",
+        "mode": "shared",
+        "cachingFeatureEnabled": false,
+        "cachingModuleConfigured": true,
+        "workers": {
+          "main": true,
+          "scheduled": true,
+          "cleaner": true,
+          "eventBus": true
+        },
+        "scheduledJobs": [
+          "schedule_job-reconcile-algolia-search",
+          "schedule_job-evaluate-commerce",
+          "schedule_job-vendor-application-notifications",
+          "schedule_job-reconcile-vendor-settlements",
+          "schedule_job-reconcile-vendor-finance-reporting",
+          "schedule_job-reconcile-automatic-captures",
+          "schedule_job-automatically-settle-orders"
+        ],
+        "completedCronTicks": []
+      },
+      {
+        "stage": "after-idle",
+        "mode": "shared",
+        "cachingFeatureEnabled": false,
+        "cachingModuleConfigured": true,
+        "workers": {
+          "main": true,
+          "scheduled": true,
+          "cleaner": true,
+          "eventBus": true
+        },
+        "scheduledJobs": [
+          "schedule_job-reconcile-algolia-search",
+          "schedule_job-evaluate-commerce",
+          "schedule_job-vendor-application-notifications",
+          "schedule_job-reconcile-vendor-settlements",
+          "schedule_job-reconcile-vendor-finance-reporting",
+          "schedule_job-reconcile-automatic-captures",
+          "schedule_job-automatically-settle-orders"
+        ],
+        "completedCronTicks": [
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements",
+          "job-vendor-application-notifications",
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements",
+          "job-vendor-application-notifications"
+        ]
+      },
+      {
+        "stage": "after-idle20",
+        "mode": "shared",
+        "cachingFeatureEnabled": false,
+        "cachingModuleConfigured": true,
+        "workers": {
+          "main": true,
+          "scheduled": true,
+          "cleaner": true,
+          "eventBus": true
+        },
+        "scheduledJobs": [
+          "schedule_job-vendor-application-notifications",
+          "schedule_job-reconcile-vendor-settlements",
+          "schedule_job-reconcile-vendor-finance-reporting",
+          "schedule_job-reconcile-automatic-captures",
+          "schedule_job-reconcile-algolia-search",
+          "schedule_job-evaluate-commerce",
+          "schedule_job-automatically-settle-orders"
+        ],
+        "completedCronTicks": [
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements",
+          "job-vendor-application-notifications",
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements",
+          "job-vendor-application-notifications",
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements",
+          "job-vendor-application-notifications"
+        ]
+      }
+    ],
+    "phases": [
+      {
+        "label": "idle.no-api.10s",
+        "category": "idle",
+        "success": true,
+        "elapsedMs": 10017,
+        "serializedRequests": 0,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 0,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": null,
+        "serializedByIoredisVersion": null,
+        "cpuMsIncludingObserver": 40.147,
+        "networkBytesIncludingObserver": {
+          "input": 49,
+          "output": 6877
+        },
+        "memoryBytes": {
+          "before": 1280232,
+          "after": 1289608
+        },
+        "applicationClients": {
+          "before": 0,
+          "after": 0
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": []
+      },
+      {
+        "label": "startup.native-runner",
+        "category": "startup",
+        "success": true,
+        "elapsedMs": 30003,
+        "serializedRequests": 185,
+        "operationalRequests": 114,
+        "executedCallsIncludingLua": 445,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "auth": 17,
+          "select": 17,
+          "client": 41,
+          "info": 36,
+          "ping": 3,
+          "hmset": 4,
+          "eval": 8,
+          "evalsha": 23,
+          "get": 3,
+          "rpush": 5,
+          "expire": 5,
+          "lrange": 2,
+          "unlink": 2,
+          "smembers": 12,
+          "zrevrange": 1,
+          "bzpopmin": 6
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 180,
+          "6.0.0": 5
+        },
+        "cpuMsIncludingObserver": 185.822,
+        "networkBytesIncludingObserver": {
+          "input": 149587,
+          "output": 220431
+        },
+        "memoryBytes": {
+          "before": 1289608,
+          "after": 2818864
+        },
+        "applicationClients": {
+          "before": 0,
+          "after": 17
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "info",
+            "calls": 36
+          },
+          {
+            "name": "client|setinfo",
+            "calls": 34
+          },
+          {
+            "name": "zadd",
+            "calls": 30
+          },
+          {
+            "name": "xadd",
+            "calls": 29
+          },
+          {
+            "name": "hmset",
+            "calls": 26
+          },
+          {
+            "name": "evalsha",
+            "calls": 23
+          }
+        ]
+      },
+      {
+        "label": "idle.shared.130s",
+        "category": "idle",
+        "success": true,
+        "elapsedMs": 130017,
+        "serializedRequests": 171,
+        "operationalRequests": 1,
+        "executedCallsIncludingLua": 893,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "info": 1,
+          "eval": 5,
+          "evalsha": 84,
+          "get": 16,
+          "lrange": 16,
+          "unlink": 16,
+          "bzpopmin": 33
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 171
+        },
+        "cpuMsIncludingObserver": 558.172,
+        "networkBytesIncludingObserver": {
+          "input": 100799,
+          "output": 34437
+        },
+        "memoryBytes": {
+          "before": 2812032,
+          "after": 2684928
+        },
+        "applicationClients": {
+          "before": 17,
+          "after": 17
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": true,
+        "completedCronTicks": [
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements",
+          "job-vendor-application-notifications",
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements",
+          "job-vendor-application-notifications"
+        ],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "evalsha",
+            "calls": 84
+          },
+          {
+            "name": "hmget",
+            "calls": 51
+          },
+          {
+            "name": "xadd",
+            "calls": 50
+          },
+          {
+            "name": "zadd",
+            "calls": 50
+          },
+          {
+            "name": "del",
+            "calls": 47
+          },
+          {
+            "name": "hget",
+            "calls": 46
+          }
+        ]
+      },
+      {
+        "label": "idle.shared.20s",
+        "category": "idle",
+        "success": true,
+        "elapsedMs": 20014,
+        "serializedRequests": 12,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 60,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 8,
+          "bzpopmin": 4
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 12
+        },
+        "cpuMsIncludingObserver": 83.119,
+        "networkBytesIncludingObserver": {
+          "input": 4841,
+          "output": 18697
+        },
+        "memoryBytes": {
+          "before": 2738688,
+          "after": 2700136
+        },
+        "applicationClients": {
+          "before": 17,
+          "after": 17
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "evalsha",
+            "calls": 8
+          },
+          {
+            "name": "lrange",
+            "calls": 4
+          },
+          {
+            "name": "xtrim",
+            "calls": 4
+          },
+          {
+            "name": "zpopmin",
+            "calls": 4
+          },
+          {
+            "name": "smembers",
+            "calls": 4
+          },
+          {
+            "name": "rpoplpush",
+            "calls": 4
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-seed.finance-native",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 62,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.824,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19084
+        },
+        "memoryBytes": {
+          "before": 2955776,
+          "after": 2956920
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "finance.native-split.capture",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 1393,
+        "serializedRequests": 199,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 1003,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 62,
+          "get": 6,
+          "rpush": 13,
+          "expire": 13,
+          "lrange": 6,
+          "unlink": 5,
+          "smembers": 88,
+          "bzpopmin": 6
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 199
+        },
+        "cpuMsIncludingObserver": 39.951,
+        "networkBytesIncludingObserver": {
+          "input": 69352,
+          "output": 45305
+        },
+        "memoryBytes": {
+          "before": 2958968,
+          "after": 2898888
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 99
+          },
+          {
+            "name": "smembers",
+            "calls": 88
+          },
+          {
+            "name": "hmget",
+            "calls": 78
+          },
+          {
+            "name": "evalsha",
+            "calls": 62
+          },
+          {
+            "name": "del",
+            "calls": 58
+          },
+          {
+            "name": "hmset",
+            "calls": 48
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-finance.native-split.capture",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 130,
+        "serializedRequests": 12,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 85,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 6,
+          "smembers": 4,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 12
+        },
+        "cpuMsIncludingObserver": 3.485,
+        "networkBytesIncludingObserver": {
+          "input": 3716,
+          "output": 19930
+        },
+        "memoryBytes": {
+          "before": 2909856,
+          "after": 2921288
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 11
+          },
+          {
+            "name": "zcard",
+            "calls": 10
+          },
+          {
+            "name": "evalsha",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 6
+          },
+          {
+            "name": "del",
+            "calls": 6
+          },
+          {
+            "name": "hmget",
+            "calls": 5
+          }
+        ]
+      },
+      {
+        "label": "events.payment.signed-success",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 162,
+        "serializedRequests": 3,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 12,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1,
+          "smembers": 1,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 3
+        },
+        "cpuMsIncludingObserver": 1.683,
+        "networkBytesIncludingObserver": {
+          "input": 17750,
+          "output": 19129
+        },
+        "memoryBytes": {
+          "before": 2922312,
+          "after": 2929896
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 2
+          },
+          {
+            "name": "zadd",
+            "calls": 2
+          },
+          {
+            "name": "hmset",
+            "calls": 1
+          },
+          {
+            "name": "zrevrangebyscore",
+            "calls": 1
+          },
+          {
+            "name": "smembers",
+            "calls": 1
+          },
+          {
+            "name": "hget",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-events.payment.signed-success",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 5047,
+        "serializedRequests": 90,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 797,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 86,
+          "smembers": 1,
+          "bzpopmin": 3
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 90
+        },
+        "cpuMsIncludingObserver": 45.383,
+        "networkBytesIncludingObserver": {
+          "input": 19038,
+          "output": 25354
+        },
+        "memoryBytes": {
+          "before": 2929896,
+          "after": 2787136
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 248
+          },
+          {
+            "name": "zcard",
+            "calls": 247
+          },
+          {
+            "name": "lindex",
+            "calls": 164
+          },
+          {
+            "name": "evalsha",
+            "calls": 86
+          },
+          {
+            "name": "hmget",
+            "calls": 5
+          },
+          {
+            "name": "del",
+            "calls": 5
+          }
+        ]
+      },
+      {
+        "label": "events.payment.signed-success-replay",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 132,
+        "serializedRequests": 3,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 12,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 1,
+          "smembers": 1,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 3
+        },
+        "cpuMsIncludingObserver": 2.113,
+        "networkBytesIncludingObserver": {
+          "input": 4264,
+          "output": 19114
+        },
+        "memoryBytes": {
+          "before": 2790208,
+          "after": 2800064
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 2
+          },
+          {
+            "name": "zadd",
+            "calls": 2
+          },
+          {
+            "name": "evalsha",
+            "calls": 1
+          },
+          {
+            "name": "hmset",
+            "calls": 1
+          },
+          {
+            "name": "zrevrangebyscore",
+            "calls": 1
+          },
+          {
+            "name": "smembers",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-events.payment.signed-success-replay",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 4947,
+        "serializedRequests": 95,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 824,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 90,
+          "smembers": 1,
+          "bzpopmin": 4
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 95
+        },
+        "cpuMsIncludingObserver": 42.802,
+        "networkBytesIncludingObserver": {
+          "input": 21463,
+          "output": 25384
+        },
+        "memoryBytes": {
+          "before": 2800064,
+          "after": 2786384
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 245
+          },
+          {
+            "name": "zcard",
+            "calls": 244
+          },
+          {
+            "name": "lindex",
+            "calls": 162
+          },
+          {
+            "name": "evalsha",
+            "calls": 90
+          },
+          {
+            "name": "hget",
+            "calls": 6
+          },
+          {
+            "name": "hmget",
+            "calls": 6
+          }
+        ]
+      },
+      {
+        "label": "finance.native-split.refund",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 808,
+        "serializedRequests": 122,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 607,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 36,
+          "get": 5,
+          "rpush": 8,
+          "expire": 8,
+          "lrange": 4,
+          "unlink": 3,
+          "smembers": 52,
+          "bzpopmin": 6
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 122
+        },
+        "cpuMsIncludingObserver": 21.947,
+        "networkBytesIncludingObserver": {
+          "input": 43366,
+          "output": 35512
+        },
+        "memoryBytes": {
+          "before": 2789456,
+          "after": 2948336
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 59
+          },
+          {
+            "name": "smembers",
+            "calls": 52
+          },
+          {
+            "name": "hmget",
+            "calls": 48
+          },
+          {
+            "name": "evalsha",
+            "calls": 36
+          },
+          {
+            "name": "del",
+            "calls": 35
+          },
+          {
+            "name": "hmset",
+            "calls": 28
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-finance.native-split.refund",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 133,
+        "serializedRequests": 15,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 110,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 7,
+          "smembers": 6,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 15
+        },
+        "cpuMsIncludingObserver": 4.579,
+        "networkBytesIncludingObserver": {
+          "input": 4822,
+          "output": 20631
+        },
+        "memoryBytes": {
+          "before": 2961680,
+          "after": 2810320
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 11
+          },
+          {
+            "name": "zcard",
+            "calls": 10
+          },
+          {
+            "name": "del",
+            "calls": 8
+          },
+          {
+            "name": "evalsha",
+            "calls": 7
+          },
+          {
+            "name": "hmget",
+            "calls": 7
+          },
+          {
+            "name": "xadd",
+            "calls": 6
+          }
+        ]
+      },
+      {
+        "label": "finance.native-split.refund-replay",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 171,
+        "serializedRequests": 4,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 7,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2,
+          "get": 1,
+          "lrange": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 4
+        },
+        "cpuMsIncludingObserver": 2.269,
+        "networkBytesIncludingObserver": {
+          "input": 545,
+          "output": 19048
+        },
+        "memoryBytes": {
+          "before": 2791896,
+          "after": 2793528
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "evalsha",
+            "calls": 2
+          },
+          {
+            "name": "get",
+            "calls": 2
+          },
+          {
+            "name": "lrange",
+            "calls": 1
+          },
+          {
+            "name": "set",
+            "calls": 1
+          },
+          {
+            "name": "del",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-finance.native-split.refund-replay",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 66,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.396,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19086
+        },
+        "memoryBytes": {
+          "before": 2793528,
+          "after": 2794680
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "finance.native-fulfillment.cancel",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 137,
+        "serializedRequests": 11,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 11,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "get": 2,
+          "rpush": 4,
+          "expire": 4,
+          "lrange": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 11
+        },
+        "cpuMsIncludingObserver": 3.504,
+        "networkBytesIncludingObserver": {
+          "input": 2747,
+          "output": 21014
+        },
+        "memoryBytes": {
+          "before": 2795704,
+          "after": 2799904
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "expire",
+            "calls": 4
+          },
+          {
+            "name": "rpush",
+            "calls": 4
+          },
+          {
+            "name": "get",
+            "calls": 2
+          },
+          {
+            "name": "lrange",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-finance.native-fulfillment.cancel",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 189,
+        "serializedRequests": 31,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 180,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1,
+          "evalsha": 10,
+          "get": 3,
+          "lrange": 3,
+          "unlink": 3,
+          "smembers": 9,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 30,
+          "6.0.0": 1
+        },
+        "cpuMsIncludingObserver": 6.385,
+        "networkBytesIncludingObserver": {
+          "input": 8128,
+          "output": 22393
+        },
+        "memoryBytes": {
+          "before": 2842576,
+          "after": 2869024
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 14
+          },
+          {
+            "name": "zcard",
+            "calls": 13
+          },
+          {
+            "name": "del",
+            "calls": 12
+          },
+          {
+            "name": "hmget",
+            "calls": 11
+          },
+          {
+            "name": "xadd",
+            "calls": 10
+          },
+          {
+            "name": "evalsha",
+            "calls": 10
+          }
+        ]
+      },
+      {
+        "label": "finance.native-split.cancel",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 1104,
+        "serializedRequests": 245,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 1221,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 2,
+          "evalsha": 69,
+          "get": 14,
+          "rpush": 14,
+          "expire": 14,
+          "lrange": 10,
+          "unlink": 9,
+          "smembers": 104,
+          "bzpopmin": 9
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 243,
+          "6.0.0": 2
+        },
+        "cpuMsIncludingObserver": 38.851,
+        "networkBytesIncludingObserver": {
+          "input": 85678,
+          "output": 51228
+        },
+        "memoryBytes": {
+          "before": 2874144,
+          "after": 2892096
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 120
+          },
+          {
+            "name": "smembers",
+            "calls": 104
+          },
+          {
+            "name": "hmget",
+            "calls": 96
+          },
+          {
+            "name": "evalsha",
+            "calls": 69
+          },
+          {
+            "name": "del",
+            "calls": 68
+          },
+          {
+            "name": "incr",
+            "calls": 60
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-finance.native-split.cancel",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 130,
+        "serializedRequests": 15,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 110,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 7,
+          "smembers": 6,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 15
+        },
+        "cpuMsIncludingObserver": 4.075,
+        "networkBytesIncludingObserver": {
+          "input": 4822,
+          "output": 20651
+        },
+        "memoryBytes": {
+          "before": 2905768,
+          "after": 2926480
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 11
+          },
+          {
+            "name": "zcard",
+            "calls": 10
+          },
+          {
+            "name": "del",
+            "calls": 8
+          },
+          {
+            "name": "evalsha",
+            "calls": 7
+          },
+          {
+            "name": "hmget",
+            "calls": 7
+          },
+          {
+            "name": "xadd",
+            "calls": 6
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-seed.checkout-native",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 66,
+        "serializedRequests": 8,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 51,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 4,
+          "smembers": 2,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 8
+        },
+        "cpuMsIncludingObserver": 2.947,
+        "networkBytesIncludingObserver": {
+          "input": 2422,
+          "output": 19229
+        },
+        "memoryBytes": {
+          "before": 2938904,
+          "after": 2945520
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 8
+          },
+          {
+            "name": "zcard",
+            "calls": 7
+          },
+          {
+            "name": "evalsha",
+            "calls": 4
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "del",
+            "calls": 4
+          },
+          {
+            "name": "hmget",
+            "calls": 3
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-seed.operator-product-permissions",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 137,
+        "serializedRequests": 15,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 110,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 7,
+          "smembers": 6,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 15
+        },
+        "cpuMsIncludingObserver": 3.939,
+        "networkBytesIncludingObserver": {
+          "input": 4826,
+          "output": 21139
+        },
+        "memoryBytes": {
+          "before": 3048656,
+          "after": 3045096
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 11
+          },
+          {
+            "name": "zcard",
+            "calls": 10
+          },
+          {
+            "name": "del",
+            "calls": 8
+          },
+          {
+            "name": "evalsha",
+            "calls": 7
+          },
+          {
+            "name": "hmget",
+            "calls": 7
+          },
+          {
+            "name": "xadd",
+            "calls": 6
+          }
+        ]
+      },
+      {
+        "label": "auth.operator.login",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 135,
+        "serializedRequests": 1,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 10,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1
+        },
+        "serializedByIoredisVersion": {
+          "6.0.0": 1
+        },
+        "cpuMsIncludingObserver": 2.259,
+        "networkBytesIncludingObserver": {
+          "input": 1066,
+          "output": 19087
+        },
+        "memoryBytes": {
+          "before": 3054312,
+          "after": 2939384
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "expire",
+            "calls": 3
+          },
+          {
+            "name": "incr",
+            "calls": 3
+          },
+          {
+            "name": "get",
+            "calls": 3
+          },
+          {
+            "name": "eval",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-auth.operator.login",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 61,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.157,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19141
+        },
+        "memoryBytes": {
+          "before": 2939384,
+          "after": 2926272
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "catalog.operator.product-create",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 302,
+        "serializedRequests": 72,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 246,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1,
+          "evalsha": 16,
+          "get": 11,
+          "rpush": 9,
+          "expire": 9,
+          "lrange": 1,
+          "unlink": 1,
+          "smembers": 24
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 71,
+          "6.0.0": 1
+        },
+        "cpuMsIncludingObserver": 9.677,
+        "networkBytesIncludingObserver": {
+          "input": 23716,
+          "output": 26047
+        },
+        "memoryBytes": {
+          "before": 2922248,
+          "after": 2995864
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 31
+          },
+          {
+            "name": "incr",
+            "calls": 27
+          },
+          {
+            "name": "zadd",
+            "calls": 26
+          },
+          {
+            "name": "smembers",
+            "calls": 24
+          },
+          {
+            "name": "hmget",
+            "calls": 18
+          },
+          {
+            "name": "evalsha",
+            "calls": 16
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-catalog.operator.product-create",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 137,
+        "serializedRequests": 36,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 285,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 14,
+          "smembers": 20,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 36
+        },
+        "cpuMsIncludingObserver": 7.066,
+        "networkBytesIncludingObserver": {
+          "input": 12581,
+          "output": 25087
+        },
+        "memoryBytes": {
+          "before": 3000536,
+          "after": 3045832
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "del",
+            "calls": 22
+          },
+          {
+            "name": "hmget",
+            "calls": 21
+          },
+          {
+            "name": "xadd",
+            "calls": 20
+          },
+          {
+            "name": "smembers",
+            "calls": 20
+          },
+          {
+            "name": "hincrby",
+            "calls": 19
+          },
+          {
+            "name": "evalsha",
+            "calls": 14
+          }
+        ]
+      },
+      {
+        "label": "catalog.operator.product-update",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 149,
+        "serializedRequests": 17,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 70,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1,
+          "evalsha": 4,
+          "get": 2,
+          "rpush": 2,
+          "expire": 2,
+          "lrange": 1,
+          "unlink": 1,
+          "smembers": 4
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 16,
+          "6.0.0": 1
+        },
+        "cpuMsIncludingObserver": 4.237,
+        "networkBytesIncludingObserver": {
+          "input": 5195,
+          "output": 21029
+        },
+        "memoryBytes": {
+          "before": 3046856,
+          "after": 3063248
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 7
+          },
+          {
+            "name": "hmget",
+            "calls": 5
+          },
+          {
+            "name": "incr",
+            "calls": 5
+          },
+          {
+            "name": "evalsha",
+            "calls": 4
+          },
+          {
+            "name": "hmset",
+            "calls": 4
+          },
+          {
+            "name": "zadd",
+            "calls": 4
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-catalog.operator.product-update",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 74,
+        "serializedRequests": 4,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 25,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 3,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 4
+        },
+        "cpuMsIncludingObserver": 1.585,
+        "networkBytesIncludingObserver": {
+          "input": 1242,
+          "output": 19160
+        },
+        "memoryBytes": {
+          "before": 3066152,
+          "after": 3069816
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 3
+          },
+          {
+            "name": "zpopmin",
+            "calls": 1
+          },
+          {
+            "name": "rpoplpush",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "auth.customer.login",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 116,
+        "serializedRequests": 1,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 8,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1
+        },
+        "serializedByIoredisVersion": {
+          "6.0.0": 1
+        },
+        "cpuMsIncludingObserver": 1.808,
+        "networkBytesIncludingObserver": {
+          "input": 1066,
+          "output": 19089
+        },
+        "memoryBytes": {
+          "before": 2984456,
+          "after": 2965008
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "incr",
+            "calls": 3
+          },
+          {
+            "name": "get",
+            "calls": 3
+          },
+          {
+            "name": "expire",
+            "calls": 1
+          },
+          {
+            "name": "eval",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-auth.customer.login",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 75,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.185,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19136
+        },
+        "memoryBytes": {
+          "before": 2965008,
+          "after": 2935448
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "auth.customer.refresh",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 19,
+        "serializedRequests": 0,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 0,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {},
+        "serializedByIoredisVersion": {},
+        "cpuMsIncludingObserver": 0.695,
+        "networkBytesIncludingObserver": {
+          "input": 49,
+          "output": 19075
+        },
+        "memoryBytes": {
+          "before": 2900208,
+          "after": 2900208
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": []
+      },
+      {
+        "label": "diagnostic.drain.after-auth.customer.refresh",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 63,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.55,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19131
+        },
+        "memoryBytes": {
+          "before": 2900208,
+          "after": 2866648
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "catalog.products.list.cold",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 106,
+        "serializedRequests": 0,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 0,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {},
+        "serializedByIoredisVersion": {},
+        "cpuMsIncludingObserver": 1.168,
+        "networkBytesIncludingObserver": {
+          "input": 49,
+          "output": 19070
+        },
+        "memoryBytes": {
+          "before": 2867672,
+          "after": 2867672
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": []
+      },
+      {
+        "label": "diagnostic.drain.after-catalog.products.list.cold",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 68,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.796,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19126
+        },
+        "memoryBytes": {
+          "before": 2867672,
+          "after": 2868696
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "catalog.products.list.warm",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 91,
+        "serializedRequests": 0,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 0,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {},
+        "serializedByIoredisVersion": {},
+        "cpuMsIncludingObserver": 0.883,
+        "networkBytesIncludingObserver": {
+          "input": 49,
+          "output": 19070
+        },
+        "memoryBytes": {
+          "before": 2869720,
+          "after": 2869720
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": []
+      },
+      {
+        "label": "diagnostic.drain.after-catalog.products.list.warm",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 73,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.73,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19126
+        },
+        "memoryBytes": {
+          "before": 2869720,
+          "after": 2870744
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "catalog.product.detail",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 88,
+        "serializedRequests": 0,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 0,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {},
+        "serializedByIoredisVersion": {},
+        "cpuMsIncludingObserver": 0.939,
+        "networkBytesIncludingObserver": {
+          "input": 49,
+          "output": 19070
+        },
+        "memoryBytes": {
+          "before": 2871768,
+          "after": 2871768
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": []
+      },
+      {
+        "label": "diagnostic.drain.after-catalog.product.detail",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 74,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.315,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19126
+        },
+        "memoryBytes": {
+          "before": 2871768,
+          "after": 2872792
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "cart.create",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 278,
+        "serializedRequests": 37,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 153,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 10,
+          "get": 7,
+          "rpush": 2,
+          "expire": 2,
+          "lrange": 1,
+          "unlink": 1,
+          "smembers": 14
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 37
+        },
+        "cpuMsIncludingObserver": 9.755,
+        "networkBytesIncludingObserver": {
+          "input": 11093,
+          "output": 23033
+        },
+        "memoryBytes": {
+          "before": 2873816,
+          "after": 2929976
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 15
+          },
+          {
+            "name": "smembers",
+            "calls": 14
+          },
+          {
+            "name": "hmget",
+            "calls": 11
+          },
+          {
+            "name": "get",
+            "calls": 11
+          },
+          {
+            "name": "evalsha",
+            "calls": 10
+          },
+          {
+            "name": "hmset",
+            "calls": 8
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-cart.create",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 69,
+        "serializedRequests": 4,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 25,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 3,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 4
+        },
+        "cpuMsIncludingObserver": 1.812,
+        "networkBytesIncludingObserver": {
+          "input": 1242,
+          "output": 19148
+        },
+        "memoryBytes": {
+          "before": 2932888,
+          "after": 2936552
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 3
+          },
+          {
+            "name": "zpopmin",
+            "calls": 1
+          },
+          {
+            "name": "rpoplpush",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "cart.add",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 498,
+        "serializedRequests": 54,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 169,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 12,
+          "get": 12,
+          "rpush": 3,
+          "expire": 3,
+          "lrange": 5,
+          "unlink": 5,
+          "smembers": 12,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 54
+        },
+        "cpuMsIncludingObserver": 12.368,
+        "networkBytesIncludingObserver": {
+          "input": 12050,
+          "output": 22331
+        },
+        "memoryBytes": {
+          "before": 2937576,
+          "after": 2948464
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 17
+          },
+          {
+            "name": "xadd",
+            "calls": 13
+          },
+          {
+            "name": "evalsha",
+            "calls": 12
+          },
+          {
+            "name": "smembers",
+            "calls": 12
+          },
+          {
+            "name": "hmget",
+            "calls": 11
+          },
+          {
+            "name": "del",
+            "calls": 10
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-cart.add",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 64,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.418,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19126
+        },
+        "memoryBytes": {
+          "before": 2948464,
+          "after": 2862944
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "cart.read",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 108,
+        "serializedRequests": 13,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 22,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 3,
+          "get": 3,
+          "lrange": 3,
+          "unlink": 3,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 13
+        },
+        "cpuMsIncludingObserver": 3.828,
+        "networkBytesIncludingObserver": {
+          "input": 1796,
+          "output": 19154
+        },
+        "memoryBytes": {
+          "before": 2863968,
+          "after": 2909800
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 3
+          },
+          {
+            "name": "lrange",
+            "calls": 3
+          },
+          {
+            "name": "unlink",
+            "calls": 3
+          },
+          {
+            "name": "del",
+            "calls": 2
+          },
+          {
+            "name": "zpopmin",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-cart.read",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 67,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.925,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19134
+        },
+        "memoryBytes": {
+          "before": 2909800,
+          "after": 2910952
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "cart.update",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 488,
+        "serializedRequests": 47,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 131,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 10,
+          "get": 11,
+          "rpush": 2,
+          "expire": 2,
+          "lrange": 6,
+          "unlink": 6,
+          "smembers": 8,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 47
+        },
+        "cpuMsIncludingObserver": 11.174,
+        "networkBytesIncludingObserver": {
+          "input": 9300,
+          "output": 21214
+        },
+        "memoryBytes": {
+          "before": 2911976,
+          "after": 2915928
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 15
+          },
+          {
+            "name": "evalsha",
+            "calls": 10
+          },
+          {
+            "name": "xadd",
+            "calls": 9
+          },
+          {
+            "name": "smembers",
+            "calls": 8
+          },
+          {
+            "name": "hmget",
+            "calls": 8
+          },
+          {
+            "name": "del",
+            "calls": 8
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-cart.update",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 75,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.124,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19131
+        },
+        "memoryBytes": {
+          "before": 2915928,
+          "after": 2917056
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "cart.remove",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 190,
+        "serializedRequests": 37,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 116,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 9,
+          "get": 8,
+          "rpush": 2,
+          "expire": 2,
+          "lrange": 4,
+          "unlink": 4,
+          "smembers": 8
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 37
+        },
+        "cpuMsIncludingObserver": 7.988,
+        "networkBytesIncludingObserver": {
+          "input": 7875,
+          "output": 21089
+        },
+        "memoryBytes": {
+          "before": 2918080,
+          "after": 2938208
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 12
+          },
+          {
+            "name": "xadd",
+            "calls": 9
+          },
+          {
+            "name": "evalsha",
+            "calls": 9
+          },
+          {
+            "name": "smembers",
+            "calls": 8
+          },
+          {
+            "name": "hmget",
+            "calls": 7
+          },
+          {
+            "name": "del",
+            "calls": 7
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-cart.remove",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 64,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.324,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19131
+        },
+        "memoryBytes": {
+          "before": 2940728,
+          "after": 2941752
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "cart.add-for-checkout",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 338,
+        "serializedRequests": 54,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 169,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 12,
+          "get": 12,
+          "rpush": 3,
+          "expire": 3,
+          "lrange": 5,
+          "unlink": 5,
+          "smembers": 12,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 54
+        },
+        "cpuMsIncludingObserver": 9.678,
+        "networkBytesIncludingObserver": {
+          "input": 12050,
+          "output": 22333
+        },
+        "memoryBytes": {
+          "before": 2942776,
+          "after": 2898616
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 17
+          },
+          {
+            "name": "xadd",
+            "calls": 13
+          },
+          {
+            "name": "evalsha",
+            "calls": 12
+          },
+          {
+            "name": "smembers",
+            "calls": 12
+          },
+          {
+            "name": "hmget",
+            "calls": 11
+          },
+          {
+            "name": "del",
+            "calls": 10
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-cart.add-for-checkout",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 70,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.413,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19133
+        },
+        "memoryBytes": {
+          "before": 2898616,
+          "after": 2889160
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "checkout.shipping-method",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 539,
+        "serializedRequests": 43,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 127,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 10,
+          "get": 11,
+          "rpush": 2,
+          "expire": 2,
+          "lrange": 4,
+          "unlink": 4,
+          "smembers": 8,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 43
+        },
+        "cpuMsIncludingObserver": 10.09,
+        "networkBytesIncludingObserver": {
+          "input": 9299,
+          "output": 21220
+        },
+        "memoryBytes": {
+          "before": 2890184,
+          "after": 2916912
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 15
+          },
+          {
+            "name": "evalsha",
+            "calls": 10
+          },
+          {
+            "name": "xadd",
+            "calls": 9
+          },
+          {
+            "name": "smembers",
+            "calls": 8
+          },
+          {
+            "name": "hmget",
+            "calls": 8
+          },
+          {
+            "name": "del",
+            "calls": 8
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-checkout.shipping-method",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 70,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 0.93,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19131
+        },
+        "memoryBytes": {
+          "before": 2916912,
+          "after": 2918040
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "checkout.payment-collection",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 127,
+        "serializedRequests": 33,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 90,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 8,
+          "get": 5,
+          "rpush": 2,
+          "expire": 2,
+          "lrange": 5,
+          "unlink": 5,
+          "smembers": 6
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 33
+        },
+        "cpuMsIncludingObserver": 5.979,
+        "networkBytesIncludingObserver": {
+          "input": 6793,
+          "output": 21436
+        },
+        "memoryBytes": {
+          "before": 2919064,
+          "after": 2935984
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "evalsha",
+            "calls": 8
+          },
+          {
+            "name": "get",
+            "calls": 8
+          },
+          {
+            "name": "xadd",
+            "calls": 7
+          },
+          {
+            "name": "smembers",
+            "calls": 6
+          },
+          {
+            "name": "lrange",
+            "calls": 5
+          },
+          {
+            "name": "hmget",
+            "calls": 5
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-checkout.payment-collection",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 64,
+        "serializedRequests": 4,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 25,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 3,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 4
+        },
+        "cpuMsIncludingObserver": 1.38,
+        "networkBytesIncludingObserver": {
+          "input": 1242,
+          "output": 19153
+        },
+        "memoryBytes": {
+          "before": 2931744,
+          "after": 2935392
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 3
+          },
+          {
+            "name": "zpopmin",
+            "calls": 1
+          },
+          {
+            "name": "rpoplpush",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "checkout.payment-session.local",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 179,
+        "serializedRequests": 31,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 72,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 6,
+          "get": 5,
+          "rpush": 3,
+          "expire": 3,
+          "lrange": 4,
+          "unlink": 4,
+          "smembers": 6
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 31
+        },
+        "cpuMsIncludingObserver": 5.761,
+        "networkBytesIncludingObserver": {
+          "input": 6827,
+          "output": 21153
+        },
+        "memoryBytes": {
+          "before": 2936416,
+          "after": 2931632
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 7
+          },
+          {
+            "name": "evalsha",
+            "calls": 6
+          },
+          {
+            "name": "zadd",
+            "calls": 6
+          },
+          {
+            "name": "smembers",
+            "calls": 6
+          },
+          {
+            "name": "incr",
+            "calls": 6
+          },
+          {
+            "name": "get",
+            "calls": 6
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-checkout.payment-session.local",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 74,
+        "serializedRequests": 8,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 51,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 4,
+          "smembers": 2,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 8
+        },
+        "cpuMsIncludingObserver": 2.349,
+        "networkBytesIncludingObserver": {
+          "input": 2422,
+          "output": 19223
+        },
+        "memoryBytes": {
+          "before": 2941200,
+          "after": 2948704
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 8
+          },
+          {
+            "name": "zcard",
+            "calls": 7
+          },
+          {
+            "name": "evalsha",
+            "calls": 4
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "del",
+            "calls": 4
+          },
+          {
+            "name": "hmget",
+            "calls": 3
+          }
+        ]
+      },
+      {
+        "label": "checkout.complete.native",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 1251,
+        "serializedRequests": 235,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 495,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 32,
+          "get": 63,
+          "rpush": 13,
+          "expire": 13,
+          "lrange": 8,
+          "unlink": 8,
+          "smembers": 45,
+          "bzpopmin": 1,
+          "set": 52
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 235
+        },
+        "cpuMsIncludingObserver": 59.302,
+        "networkBytesIncludingObserver": {
+          "input": 2024604,
+          "output": 2006264
+        },
+        "memoryBytes": {
+          "before": 2949728,
+          "after": 2969776
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 67
+          },
+          {
+            "name": "set",
+            "calls": 57
+          },
+          {
+            "name": "xadd",
+            "calls": 50
+          },
+          {
+            "name": "zadd",
+            "calls": 46
+          },
+          {
+            "name": "incr",
+            "calls": 46
+          },
+          {
+            "name": "smembers",
+            "calls": 45
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-checkout.complete.native",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 290,
+        "serializedRequests": 87,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 630,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 3,
+          "evalsha": 29,
+          "get": 2,
+          "lrange": 4,
+          "unlink": 5,
+          "smembers": 42,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 84,
+          "6.0.0": 3
+        },
+        "cpuMsIncludingObserver": 20.274,
+        "networkBytesIncludingObserver": {
+          "input": 27927,
+          "output": 32707
+        },
+        "memoryBytes": {
+          "before": 2990808,
+          "after": 2940560
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "del",
+            "calls": 46
+          },
+          {
+            "name": "hmget",
+            "calls": 45
+          },
+          {
+            "name": "xadd",
+            "calls": 44
+          },
+          {
+            "name": "hincrby",
+            "calls": 43
+          },
+          {
+            "name": "smembers",
+            "calls": 42
+          },
+          {
+            "name": "evalsha",
+            "calls": 29
+          }
+        ]
+      },
+      {
+        "label": "checkout.complete.replay",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 817,
+        "serializedRequests": 130,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 142,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 5,
+          "get": 59,
+          "lrange": 6,
+          "unlink": 7,
+          "bzpopmin": 1,
+          "set": 52
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 130
+        },
+        "cpuMsIncludingObserver": 61.932,
+        "networkBytesIncludingObserver": {
+          "input": 1989256,
+          "output": 1996888
+        },
+        "memoryBytes": {
+          "before": 2941584,
+          "after": 2987504
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 61
+          },
+          {
+            "name": "set",
+            "calls": 54
+          },
+          {
+            "name": "unlink",
+            "calls": 7
+          },
+          {
+            "name": "lrange",
+            "calls": 6
+          },
+          {
+            "name": "evalsha",
+            "calls": 5
+          },
+          {
+            "name": "del",
+            "calls": 3
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-checkout.complete.replay",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 79,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 2.025,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19151
+        },
+        "memoryBytes": {
+          "before": 2987504,
+          "after": 2988664
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "events.native.enqueue-and-deliver",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 115,
+        "serializedRequests": 6,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 47,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 3,
+          "smembers": 2,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 6
+        },
+        "cpuMsIncludingObserver": 2.374,
+        "networkBytesIncludingObserver": {
+          "input": 2756,
+          "output": 19668
+        },
+        "memoryBytes": {
+          "before": 2990712,
+          "after": 3006992
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 5
+          },
+          {
+            "name": "hmget",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 3
+          },
+          {
+            "name": "del",
+            "calls": 3
+          },
+          {
+            "name": "hmset",
+            "calls": 2
+          },
+          {
+            "name": "llen",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-events.native.enqueue-and-deliver",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 76,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.928,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 19155
+        },
+        "memoryBytes": {
+          "before": 3006992,
+          "after": 3008144
+        },
+        "applicationClients": {
+          "before": 18,
+          "after": 18
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "idle.after-shutdown.10s",
+        "category": "idle",
+        "success": true,
+        "elapsedMs": 10019,
+        "serializedRequests": 0,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 0,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": null,
+        "serializedByIoredisVersion": null,
+        "cpuMsIncludingObserver": 39.013,
+        "networkBytesIncludingObserver": {
+          "input": 49,
+          "output": 13492
+        },
+        "memoryBytes": {
+          "before": 2767880,
+          "after": 2752080
+        },
+        "applicationClients": {
+          "before": 0,
+          "after": 0
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": []
+      }
+    ]
+  },
+  "after": {
+    "run": "baseline-1791785887763",
+    "tests": [
+      "Test Suites: 1 passed, 1 total",
+      "Tests:       1 skipped, 2 passed, 3 total",
+      "Time:        275.789 s"
+    ],
+    "runtime": [
+      {
+        "stage": "before-idle",
+        "mode": "shared",
+        "cachingFeatureEnabled": false,
+        "cachingModuleConfigured": false,
+        "workers": {
+          "main": true,
+          "scheduled": true,
+          "cleaner": true,
+          "eventBus": true
+        },
+        "scheduledJobs": [
+          "schedule_job-reconcile-algolia-search",
+          "schedule_job-reconcile-vendor-settlements",
+          "schedule_job-reconcile-vendor-finance-reporting",
+          "schedule_job-reconcile-automatic-captures",
+          "schedule_job-automatically-settle-orders"
+        ],
+        "completedCronTicks": []
+      },
+      {
+        "stage": "after-idle",
+        "mode": "shared",
+        "cachingFeatureEnabled": false,
+        "cachingModuleConfigured": false,
+        "workers": {
+          "main": true,
+          "scheduled": true,
+          "cleaner": true,
+          "eventBus": true
+        },
+        "scheduledJobs": [
+          "schedule_job-reconcile-algolia-search",
+          "schedule_job-reconcile-vendor-settlements",
+          "schedule_job-reconcile-vendor-finance-reporting",
+          "schedule_job-reconcile-automatic-captures",
+          "schedule_job-automatically-settle-orders"
+        ],
+        "completedCronTicks": [
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements",
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements"
+        ]
+      },
+      {
+        "stage": "after-idle20",
+        "mode": "shared",
+        "cachingFeatureEnabled": false,
+        "cachingModuleConfigured": false,
+        "workers": {
+          "main": true,
+          "scheduled": true,
+          "cleaner": true,
+          "eventBus": true
+        },
+        "scheduledJobs": [
+          "schedule_job-reconcile-algolia-search",
+          "schedule_job-reconcile-vendor-settlements",
+          "schedule_job-reconcile-vendor-finance-reporting",
+          "schedule_job-reconcile-automatic-captures",
+          "schedule_job-automatically-settle-orders"
+        ],
+        "completedCronTicks": [
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements",
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements",
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements"
+        ]
+      }
+    ],
+    "phases": [
+      {
+        "label": "idle.no-api.10s",
+        "category": "idle",
+        "success": true,
+        "elapsedMs": 10005,
+        "serializedRequests": 0,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 0,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": null,
+        "serializedByIoredisVersion": null,
+        "cpuMsIncludingObserver": 38.773,
+        "networkBytesIncludingObserver": {
+          "input": 49,
+          "output": 6873
+        },
+        "memoryBytes": {
+          "before": 1292848,
+          "after": 1302224
+        },
+        "applicationClients": {
+          "before": 0,
+          "after": 0
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": []
+      },
+      {
+        "label": "startup.native-runner",
+        "category": "startup",
+        "success": true,
+        "elapsedMs": 28683,
+        "serializedRequests": 138,
+        "operationalRequests": 91,
+        "executedCallsIncludingLua": 267,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "auth": 14,
+          "select": 14,
+          "client": 32,
+          "info": 31,
+          "hmset": 4,
+          "eval": 6,
+          "evalsha": 14,
+          "get": 3,
+          "rpush": 5,
+          "expire": 5,
+          "lrange": 2,
+          "unlink": 2,
+          "zrevrange": 1,
+          "bzpopmin": 5
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 133,
+          "6.0.0": 5
+        },
+        "cpuMsIncludingObserver": 163.333,
+        "networkBytesIncludingObserver": {
+          "input": 98114,
+          "output": 189389
+        },
+        "memoryBytes": {
+          "before": 1302224,
+          "after": 2442664
+        },
+        "applicationClients": {
+          "before": 0,
+          "after": 14
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "info",
+            "calls": 31
+          },
+          {
+            "name": "client|setinfo",
+            "calls": 28
+          },
+          {
+            "name": "zadd",
+            "calls": 18
+          },
+          {
+            "name": "hmset",
+            "calls": 16
+          },
+          {
+            "name": "auth",
+            "calls": 14
+          },
+          {
+            "name": "select",
+            "calls": 14
+          }
+        ]
+      },
+      {
+        "label": "idle.shared.130s",
+        "category": "idle",
+        "success": true,
+        "elapsedMs": 130015,
+        "serializedRequests": 160,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 804,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 84,
+          "get": 14,
+          "lrange": 14,
+          "unlink": 14,
+          "bzpopmin": 34
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 160
+        },
+        "cpuMsIncludingObserver": 540.129,
+        "networkBytesIncludingObserver": {
+          "input": 53036,
+          "output": 26319
+        },
+        "memoryBytes": {
+          "before": 2578744,
+          "after": 2663840
+        },
+        "applicationClients": {
+          "before": 14,
+          "after": 14
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": true,
+        "completedCronTicks": [
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements",
+          "job-automatically-settle-orders",
+          "job-reconcile-automatic-captures",
+          "job-reconcile-vendor-finance-reporting",
+          "job-reconcile-vendor-settlements"
+        ],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "evalsha",
+            "calls": 84
+          },
+          {
+            "name": "hmget",
+            "calls": 48
+          },
+          {
+            "name": "del",
+            "calls": 46
+          },
+          {
+            "name": "hget",
+            "calls": 40
+          },
+          {
+            "name": "zrangebyscore",
+            "calls": 40
+          },
+          {
+            "name": "rpoplpush",
+            "calls": 40
+          }
+        ]
+      },
+      {
+        "label": "idle.shared.20s",
+        "category": "idle",
+        "success": true,
+        "elapsedMs": 20012,
+        "serializedRequests": 12,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 60,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 8,
+          "bzpopmin": 4
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 12
+        },
+        "cpuMsIncludingObserver": 81.378,
+        "networkBytesIncludingObserver": {
+          "input": 4841,
+          "output": 17593
+        },
+        "memoryBytes": {
+          "before": 2728408,
+          "after": 2687848
+        },
+        "applicationClients": {
+          "before": 14,
+          "after": 14
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "evalsha",
+            "calls": 8
+          },
+          {
+            "name": "bzpopmin",
+            "calls": 4
+          },
+          {
+            "name": "hget",
+            "calls": 4
+          },
+          {
+            "name": "xtrim",
+            "calls": 4
+          },
+          {
+            "name": "zrangebyscore",
+            "calls": 4
+          },
+          {
+            "name": "lrange",
+            "calls": 4
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-seed.finance-native",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 73,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.698,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17938
+        },
+        "memoryBytes": {
+          "before": 2752960,
+          "after": 2754232
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "finance.native-split.capture",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 1220,
+        "serializedRequests": 59,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 149,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 14,
+          "get": 6,
+          "rpush": 13,
+          "expire": 13,
+          "lrange": 6,
+          "unlink": 5,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 59
+        },
+        "cpuMsIncludingObserver": 17.651,
+        "networkBytesIncludingObserver": {
+          "input": 19676,
+          "output": 29557
+        },
+        "memoryBytes": {
+          "before": 2756280,
+          "after": 2796968
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "evalsha",
+            "calls": 14
+          },
+          {
+            "name": "rpush",
+            "calls": 13
+          },
+          {
+            "name": "expire",
+            "calls": 13
+          },
+          {
+            "name": "get",
+            "calls": 12
+          },
+          {
+            "name": "del",
+            "calls": 10
+          },
+          {
+            "name": "xadd",
+            "calls": 9
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-finance.native-split.capture",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 73,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.04,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17945
+        },
+        "memoryBytes": {
+          "before": 2795840,
+          "after": 2796968
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "events.payment.signed-success",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 163,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 11,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.65,
+        "networkBytesIncludingObserver": {
+          "input": 17706,
+          "output": 17977
+        },
+        "memoryBytes": {
+          "before": 2803112,
+          "after": 2818888
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 2
+          },
+          {
+            "name": "zadd",
+            "calls": 2
+          },
+          {
+            "name": "bzpopmin",
+            "calls": 1
+          },
+          {
+            "name": "hget",
+            "calls": 1
+          },
+          {
+            "name": "eval",
+            "calls": 1
+          },
+          {
+            "name": "zrange",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-events.payment.signed-success",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 5049,
+        "serializedRequests": 91,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 804,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 87,
+          "bzpopmin": 4
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 91
+        },
+        "cpuMsIncludingObserver": 41.405,
+        "networkBytesIncludingObserver": {
+          "input": 19649,
+          "output": 24242
+        },
+        "memoryBytes": {
+          "before": 2818888,
+          "after": 2736792
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 248
+          },
+          {
+            "name": "zcard",
+            "calls": 247
+          },
+          {
+            "name": "lindex",
+            "calls": 164
+          },
+          {
+            "name": "evalsha",
+            "calls": 87
+          },
+          {
+            "name": "hmget",
+            "calls": 6
+          },
+          {
+            "name": "del",
+            "calls": 6
+          }
+        ]
+      },
+      {
+        "label": "events.payment.signed-success-replay",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 130,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 11,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 1,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 2.122,
+        "networkBytesIncludingObserver": {
+          "input": 4220,
+          "output": 17973
+        },
+        "memoryBytes": {
+          "before": 2739864,
+          "after": 2749728
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 2
+          },
+          {
+            "name": "zadd",
+            "calls": 2
+          },
+          {
+            "name": "bzpopmin",
+            "calls": 1
+          },
+          {
+            "name": "hget",
+            "calls": 1
+          },
+          {
+            "name": "evalsha",
+            "calls": 1
+          },
+          {
+            "name": "zrange",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-events.payment.signed-success-replay",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 5044,
+        "serializedRequests": 87,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 788,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 85,
+          "bzpopmin": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 87
+        },
+        "cpuMsIncludingObserver": 39.639,
+        "networkBytesIncludingObserver": {
+          "input": 18261,
+          "output": 24165
+        },
+        "memoryBytes": {
+          "before": 2749728,
+          "after": 2688272
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 248
+          },
+          {
+            "name": "zcard",
+            "calls": 247
+          },
+          {
+            "name": "lindex",
+            "calls": 164
+          },
+          {
+            "name": "evalsha",
+            "calls": 85
+          },
+          {
+            "name": "hmget",
+            "calls": 4
+          },
+          {
+            "name": "xadd",
+            "calls": 4
+          }
+        ]
+      },
+      {
+        "label": "finance.native-split.refund",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 804,
+        "serializedRequests": 30,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 33,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2,
+          "get": 5,
+          "rpush": 8,
+          "expire": 8,
+          "lrange": 4,
+          "unlink": 3
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 30
+        },
+        "cpuMsIncludingObserver": 8.571,
+        "networkBytesIncludingObserver": {
+          "input": 9148,
+          "output": 24881
+        },
+        "memoryBytes": {
+          "before": 2690320,
+          "after": 2737352
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "rpush",
+            "calls": 8
+          },
+          {
+            "name": "expire",
+            "calls": 8
+          },
+          {
+            "name": "get",
+            "calls": 6
+          },
+          {
+            "name": "lrange",
+            "calls": 4
+          },
+          {
+            "name": "unlink",
+            "calls": 3
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-finance.native-split.refund",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 65,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.265,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17947
+        },
+        "memoryBytes": {
+          "before": 2735712,
+          "after": 2736864
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "finance.native-split.refund-replay",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 186,
+        "serializedRequests": 6,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 15,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 3,
+          "get": 1,
+          "lrange": 1,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 6
+        },
+        "cpuMsIncludingObserver": 3.127,
+        "networkBytesIncludingObserver": {
+          "input": 1214,
+          "output": 17946
+        },
+        "memoryBytes": {
+          "before": 2740960,
+          "after": 2785464
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "evalsha",
+            "calls": 3
+          },
+          {
+            "name": "get",
+            "calls": 2
+          },
+          {
+            "name": "del",
+            "calls": 2
+          },
+          {
+            "name": "bzpopmin",
+            "calls": 1
+          },
+          {
+            "name": "zrangebyscore",
+            "calls": 1
+          },
+          {
+            "name": "lrange",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-finance.native-split.refund-replay",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 70,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 0.987,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17956
+        },
+        "memoryBytes": {
+          "before": 2785464,
+          "after": 2786592
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "finance.native-fulfillment.cancel",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 122,
+        "serializedRequests": 11,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 11,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "get": 2,
+          "rpush": 4,
+          "expire": 4,
+          "lrange": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 11
+        },
+        "cpuMsIncludingObserver": 2.975,
+        "networkBytesIncludingObserver": {
+          "input": 2747,
+          "output": 19883
+        },
+        "memoryBytes": {
+          "before": 2791712,
+          "after": 2793864
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "rpush",
+            "calls": 4
+          },
+          {
+            "name": "expire",
+            "calls": 4
+          },
+          {
+            "name": "get",
+            "calls": 2
+          },
+          {
+            "name": "lrange",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-finance.native-fulfillment.cancel",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 128,
+        "serializedRequests": 15,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 62,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1,
+          "evalsha": 4,
+          "get": 3,
+          "lrange": 3,
+          "unlink": 3,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 14,
+          "6.0.0": 1
+        },
+        "cpuMsIncludingObserver": 3.291,
+        "networkBytesIncludingObserver": {
+          "input": 2647,
+          "output": 18039
+        },
+        "memoryBytes": {
+          "before": 2799136,
+          "after": 2833512
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 11
+          },
+          {
+            "name": "zcard",
+            "calls": 10
+          },
+          {
+            "name": "lindex",
+            "calls": 6
+          },
+          {
+            "name": "evalsha",
+            "calls": 4
+          },
+          {
+            "name": "get",
+            "calls": 4
+          },
+          {
+            "name": "lrange",
+            "calls": 3
+          }
+        ]
+      },
+      {
+        "label": "finance.native-split.cancel",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 1061,
+        "serializedRequests": 69,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 115,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1,
+          "evalsha": 5,
+          "get": 14,
+          "rpush": 14,
+          "expire": 14,
+          "lrange": 10,
+          "unlink": 9,
+          "bzpopmin": 1,
+          "publish": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 67,
+          "6.0.0": 2
+        },
+        "cpuMsIncludingObserver": 16.946,
+        "networkBytesIncludingObserver": {
+          "input": 20405,
+          "output": 31454
+        },
+        "memoryBytes": {
+          "before": 2834536,
+          "after": 2853264
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 16
+          },
+          {
+            "name": "rpush",
+            "calls": 14
+          },
+          {
+            "name": "expire",
+            "calls": 14
+          },
+          {
+            "name": "lrange",
+            "calls": 10
+          },
+          {
+            "name": "unlink",
+            "calls": 9
+          },
+          {
+            "name": "evalsha",
+            "calls": 5
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-finance.native-split.cancel",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 65,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.163,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17974
+        },
+        "memoryBytes": {
+          "before": 2851624,
+          "after": 2852776
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-seed.checkout-native",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 74,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.273,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17978
+        },
+        "memoryBytes": {
+          "before": 2765368,
+          "after": 2766512
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-seed.operator-product-permissions",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 70,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.345,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17978
+        },
+        "memoryBytes": {
+          "before": 2780712,
+          "after": 2781736
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "auth.operator.login",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 130,
+        "serializedRequests": 1,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 7,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1
+        },
+        "serializedByIoredisVersion": {
+          "6.0.0": 1
+        },
+        "cpuMsIncludingObserver": 1.67,
+        "networkBytesIncludingObserver": {
+          "input": 1268,
+          "output": 17928
+        },
+        "memoryBytes": {
+          "before": 2782760,
+          "after": 2812896
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "set",
+            "calls": 3
+          },
+          {
+            "name": "get",
+            "calls": 3
+          },
+          {
+            "name": "eval",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-auth.operator.login",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 76,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.376,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17983
+        },
+        "memoryBytes": {
+          "before": 2812896,
+          "after": 2814000
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "catalog.operator.product-create",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 305,
+        "serializedRequests": 41,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 127,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1,
+          "evalsha": 9,
+          "get": 11,
+          "rpush": 9,
+          "expire": 9,
+          "lrange": 1,
+          "unlink": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 40,
+          "6.0.0": 1
+        },
+        "cpuMsIncludingObserver": 9.382,
+        "networkBytesIncludingObserver": {
+          "input": 14381,
+          "output": 24217
+        },
+        "memoryBytes": {
+          "before": 2815024,
+          "after": 2874624
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 12
+          },
+          {
+            "name": "evalsha",
+            "calls": 9
+          },
+          {
+            "name": "rpush",
+            "calls": 9
+          },
+          {
+            "name": "xadd",
+            "calls": 9
+          },
+          {
+            "name": "expire",
+            "calls": 9
+          },
+          {
+            "name": "hget",
+            "calls": 8
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-catalog.operator.product-create",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 70,
+        "serializedRequests": 8,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 57,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 5,
+          "bzpopmin": 3
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 8
+        },
+        "cpuMsIncludingObserver": 2.592,
+        "networkBytesIncludingObserver": {
+          "input": 2977,
+          "output": 18103
+        },
+        "memoryBytes": {
+          "before": 2879136,
+          "after": 2916688
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 8
+          },
+          {
+            "name": "zcard",
+            "calls": 7
+          },
+          {
+            "name": "evalsha",
+            "calls": 5
+          },
+          {
+            "name": "del",
+            "calls": 5
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "hmget",
+            "calls": 4
+          }
+        ]
+      },
+      {
+        "label": "catalog.operator.product-update",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 238,
+        "serializedRequests": 12,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 56,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1,
+          "evalsha": 3,
+          "get": 2,
+          "rpush": 2,
+          "expire": 2,
+          "lrange": 1,
+          "unlink": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 11,
+          "6.0.0": 1
+        },
+        "cpuMsIncludingObserver": 4.403,
+        "networkBytesIncludingObserver": {
+          "input": 4170,
+          "output": 19251
+        },
+        "memoryBytes": {
+          "before": 2917712,
+          "after": 2928232
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 5
+          },
+          {
+            "name": "hmget",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 3
+          },
+          {
+            "name": "incr",
+            "calls": 3
+          },
+          {
+            "name": "get",
+            "calls": 3
+          },
+          {
+            "name": "del",
+            "calls": 3
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-catalog.operator.product-update",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 61,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.441,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17998
+        },
+        "memoryBytes": {
+          "before": 2928232,
+          "after": 2879072
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "auth.customer.login",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 123,
+        "serializedRequests": 1,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 7,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 1
+        },
+        "serializedByIoredisVersion": {
+          "6.0.0": 1
+        },
+        "cpuMsIncludingObserver": 1.707,
+        "networkBytesIncludingObserver": {
+          "input": 1268,
+          "output": 17943
+        },
+        "memoryBytes": {
+          "before": 2866928,
+          "after": 2847216
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 3
+          },
+          {
+            "name": "incr",
+            "calls": 2
+          },
+          {
+            "name": "eval",
+            "calls": 1
+          },
+          {
+            "name": "set",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-auth.customer.login",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 72,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.63,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17995
+        },
+        "memoryBytes": {
+          "before": 2847216,
+          "after": 2832048
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "auth.customer.refresh",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 18,
+        "serializedRequests": 0,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 0,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {},
+        "serializedByIoredisVersion": {},
+        "cpuMsIncludingObserver": 1.078,
+        "networkBytesIncludingObserver": {
+          "input": 49,
+          "output": 17939
+        },
+        "memoryBytes": {
+          "before": 2826472,
+          "after": 2826472
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": []
+      },
+      {
+        "label": "diagnostic.drain.after-auth.customer.refresh",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 65,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.215,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17995
+        },
+        "memoryBytes": {
+          "before": 2826472,
+          "after": 2827496
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "catalog.products.list.cold",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 121,
+        "serializedRequests": 0,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 0,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {},
+        "serializedByIoredisVersion": {},
+        "cpuMsIncludingObserver": 1.257,
+        "networkBytesIncludingObserver": {
+          "input": 49,
+          "output": 17939
+        },
+        "memoryBytes": {
+          "before": 2821352,
+          "after": 2821352
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": []
+      },
+      {
+        "label": "diagnostic.drain.after-catalog.products.list.cold",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 70,
+        "serializedRequests": 4,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 26,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 3,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 4
+        },
+        "cpuMsIncludingObserver": 1.87,
+        "networkBytesIncludingObserver": {
+          "input": 1098,
+          "output": 18032
+        },
+        "memoryBytes": {
+          "before": 2821352,
+          "after": 2847160
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 3
+          },
+          {
+            "name": "bzpopmin",
+            "calls": 1
+          },
+          {
+            "name": "zrangebyscore",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "catalog.products.list.warm",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 96,
+        "serializedRequests": 0,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 0,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {},
+        "serializedByIoredisVersion": {},
+        "cpuMsIncludingObserver": 1.118,
+        "networkBytesIncludingObserver": {
+          "input": 49,
+          "output": 17942
+        },
+        "memoryBytes": {
+          "before": 2848184,
+          "after": 2848184
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": []
+      },
+      {
+        "label": "diagnostic.drain.after-catalog.products.list.warm",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 63,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.502,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17998
+        },
+        "memoryBytes": {
+          "before": 2848184,
+          "after": 2849208
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "catalog.product.detail",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 88,
+        "serializedRequests": 0,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 0,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {},
+        "serializedByIoredisVersion": {},
+        "cpuMsIncludingObserver": 1.043,
+        "networkBytesIncludingObserver": {
+          "input": 49,
+          "output": 17942
+        },
+        "memoryBytes": {
+          "before": 2850232,
+          "after": 2850232
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": []
+      },
+      {
+        "label": "diagnostic.drain.after-catalog.product.detail",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 72,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.539,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17998
+        },
+        "memoryBytes": {
+          "before": 2850232,
+          "after": 2830784
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "cart.create",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 234,
+        "serializedRequests": 15,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2,
+          "get": 7,
+          "rpush": 2,
+          "expire": 2,
+          "lrange": 1,
+          "unlink": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 15
+        },
+        "cpuMsIncludingObserver": 4.335,
+        "networkBytesIncludingObserver": {
+          "input": 3163,
+          "output": 19415
+        },
+        "memoryBytes": {
+          "before": 2831808,
+          "after": 2853072
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 8
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          },
+          {
+            "name": "rpush",
+            "calls": 2
+          },
+          {
+            "name": "expire",
+            "calls": 2
+          },
+          {
+            "name": "lrange",
+            "calls": 1
+          },
+          {
+            "name": "set",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-cart.create",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 67,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.635,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 18000
+        },
+        "memoryBytes": {
+          "before": 2853072,
+          "after": 2854128
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "cart.add",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 428,
+        "serializedRequests": 32,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 38,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 4,
+          "get": 12,
+          "rpush": 3,
+          "expire": 3,
+          "lrange": 5,
+          "unlink": 5
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 32
+        },
+        "cpuMsIncludingObserver": 8.168,
+        "networkBytesIncludingObserver": {
+          "input": 4157,
+          "output": 19186
+        },
+        "memoryBytes": {
+          "before": 2856176,
+          "after": 2837184
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 14
+          },
+          {
+            "name": "lrange",
+            "calls": 5
+          },
+          {
+            "name": "unlink",
+            "calls": 5
+          },
+          {
+            "name": "evalsha",
+            "calls": 4
+          },
+          {
+            "name": "rpush",
+            "calls": 3
+          },
+          {
+            "name": "expire",
+            "calls": 3
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-cart.add",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 70,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.421,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17994
+        },
+        "memoryBytes": {
+          "before": 2837184,
+          "after": 2838344
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "cart.read",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 72,
+        "serializedRequests": 11,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 14,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2,
+          "get": 3,
+          "lrange": 3,
+          "unlink": 3
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 11
+        },
+        "cpuMsIncludingObserver": 2.814,
+        "networkBytesIncludingObserver": {
+          "input": 1072,
+          "output": 17986
+        },
+        "memoryBytes": {
+          "before": 2839368,
+          "after": 2840016
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 4
+          },
+          {
+            "name": "lrange",
+            "calls": 3
+          },
+          {
+            "name": "unlink",
+            "calls": 3
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          },
+          {
+            "name": "set",
+            "calls": 1
+          },
+          {
+            "name": "del",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-cart.read",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 74,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.308,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17994
+        },
+        "memoryBytes": {
+          "before": 2840016,
+          "after": 2841144
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "cart.update",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 451,
+        "serializedRequests": 31,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 37,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 4,
+          "get": 11,
+          "rpush": 2,
+          "expire": 2,
+          "lrange": 6,
+          "unlink": 6
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 31
+        },
+        "cpuMsIncludingObserver": 7.196,
+        "networkBytesIncludingObserver": {
+          "input": 3559,
+          "output": 18744
+        },
+        "memoryBytes": {
+          "before": 2842168,
+          "after": 2802584
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 13
+          },
+          {
+            "name": "lrange",
+            "calls": 6
+          },
+          {
+            "name": "unlink",
+            "calls": 6
+          },
+          {
+            "name": "evalsha",
+            "calls": 4
+          },
+          {
+            "name": "rpush",
+            "calls": 2
+          },
+          {
+            "name": "set",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-cart.update",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 63,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.542,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17985
+        },
+        "memoryBytes": {
+          "before": 2802584,
+          "after": 2713240
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "cart.remove",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 189,
+        "serializedRequests": 26,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 38,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 5,
+          "get": 8,
+          "rpush": 2,
+          "expire": 2,
+          "lrange": 4,
+          "unlink": 4,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 26
+        },
+        "cpuMsIncludingObserver": 5.929,
+        "networkBytesIncludingObserver": {
+          "input": 3744,
+          "output": 18726
+        },
+        "memoryBytes": {
+          "before": 2714976,
+          "after": 2760504
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 10
+          },
+          {
+            "name": "evalsha",
+            "calls": 5
+          },
+          {
+            "name": "lrange",
+            "calls": 4
+          },
+          {
+            "name": "unlink",
+            "calls": 4
+          },
+          {
+            "name": "del",
+            "calls": 3
+          },
+          {
+            "name": "rpush",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-cart.remove",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 66,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.107,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17980
+        },
+        "memoryBytes": {
+          "before": 2760504,
+          "after": 2761664
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "cart.add-for-checkout",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 356,
+        "serializedRequests": 32,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 38,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 4,
+          "get": 12,
+          "rpush": 3,
+          "expire": 3,
+          "lrange": 5,
+          "unlink": 5
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 32
+        },
+        "cpuMsIncludingObserver": 6.821,
+        "networkBytesIncludingObserver": {
+          "input": 4157,
+          "output": 19166
+        },
+        "memoryBytes": {
+          "before": 2762688,
+          "after": 2764056
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 14
+          },
+          {
+            "name": "lrange",
+            "calls": 5
+          },
+          {
+            "name": "unlink",
+            "calls": 5
+          },
+          {
+            "name": "evalsha",
+            "calls": 4
+          },
+          {
+            "name": "rpush",
+            "calls": 3
+          },
+          {
+            "name": "expire",
+            "calls": 3
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-cart.add-for-checkout",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 67,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.158,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17982
+        },
+        "memoryBytes": {
+          "before": 2764056,
+          "after": 2765216
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "checkout.shipping-method",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 618,
+        "serializedRequests": 27,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 33,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 4,
+          "get": 11,
+          "rpush": 2,
+          "expire": 2,
+          "lrange": 4,
+          "unlink": 4
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 27
+        },
+        "cpuMsIncludingObserver": 7.467,
+        "networkBytesIncludingObserver": {
+          "input": 3546,
+          "output": 18728
+        },
+        "memoryBytes": {
+          "before": 2766240,
+          "after": 2767608
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 13
+          },
+          {
+            "name": "evalsha",
+            "calls": 4
+          },
+          {
+            "name": "lrange",
+            "calls": 4
+          },
+          {
+            "name": "unlink",
+            "calls": 4
+          },
+          {
+            "name": "rpush",
+            "calls": 2
+          },
+          {
+            "name": "set",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-checkout.shipping-method",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 66,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.472,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17982
+        },
+        "memoryBytes": {
+          "before": 2767608,
+          "after": 2768768
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "checkout.payment-collection",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 148,
+        "serializedRequests": 23,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 29,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 4,
+          "get": 5,
+          "rpush": 2,
+          "expire": 2,
+          "lrange": 5,
+          "unlink": 5
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 23
+        },
+        "cpuMsIncludingObserver": 5.09,
+        "networkBytesIncludingObserver": {
+          "input": 2870,
+          "output": 18872
+        },
+        "memoryBytes": {
+          "before": 2769792,
+          "after": 2771160
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 7
+          },
+          {
+            "name": "lrange",
+            "calls": 5
+          },
+          {
+            "name": "unlink",
+            "calls": 5
+          },
+          {
+            "name": "evalsha",
+            "calls": 4
+          },
+          {
+            "name": "rpush",
+            "calls": 2
+          },
+          {
+            "name": "set",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-checkout.payment-collection",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 72,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.622,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17982
+        },
+        "memoryBytes": {
+          "before": 2771160,
+          "after": 2772320
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "checkout.payment-session.local",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 196,
+        "serializedRequests": 21,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 24,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2,
+          "get": 5,
+          "rpush": 3,
+          "expire": 3,
+          "lrange": 4,
+          "unlink": 4
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 21
+        },
+        "cpuMsIncludingObserver": 4.941,
+        "networkBytesIncludingObserver": {
+          "input": 3003,
+          "output": 19260
+        },
+        "memoryBytes": {
+          "before": 2773344,
+          "after": 2773992
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 6
+          },
+          {
+            "name": "lrange",
+            "calls": 4
+          },
+          {
+            "name": "unlink",
+            "calls": 4
+          },
+          {
+            "name": "rpush",
+            "calls": 3
+          },
+          {
+            "name": "expire",
+            "calls": 3
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-checkout.payment-session.local",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 73,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.305,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 17982
+        },
+        "memoryBytes": {
+          "before": 2773992,
+          "after": 2775120
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "checkout.complete.native",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 1132,
+        "serializedRequests": 165,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 193,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 8,
+          "get": 63,
+          "rpush": 13,
+          "expire": 13,
+          "lrange": 8,
+          "unlink": 8,
+          "set": 52
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 165
+        },
+        "cpuMsIncludingObserver": 52.357,
+        "networkBytesIncludingObserver": {
+          "input": 2000537,
+          "output": 2003519
+        },
+        "memoryBytes": {
+          "before": 2776144,
+          "after": 2793176
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 66
+          },
+          {
+            "name": "set",
+            "calls": 55
+          },
+          {
+            "name": "rpush",
+            "calls": 13
+          },
+          {
+            "name": "expire",
+            "calls": 13
+          },
+          {
+            "name": "evalsha",
+            "calls": 8
+          },
+          {
+            "name": "lrange",
+            "calls": 8
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-checkout.complete.native",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 191,
+        "serializedRequests": 23,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 107,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "eval": 2,
+          "evalsha": 7,
+          "get": 2,
+          "lrange": 4,
+          "unlink": 5,
+          "bzpopmin": 2,
+          "publish": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 20,
+          "6.0.0": 3
+        },
+        "cpuMsIncludingObserver": 5.454,
+        "networkBytesIncludingObserver": {
+          "input": 5088,
+          "output": 18717
+        },
+        "memoryBytes": {
+          "before": 2772496,
+          "after": 2809640
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 14
+          },
+          {
+            "name": "zcard",
+            "calls": 13
+          },
+          {
+            "name": "lindex",
+            "calls": 8
+          },
+          {
+            "name": "evalsha",
+            "calls": 7
+          },
+          {
+            "name": "del",
+            "calls": 6
+          },
+          {
+            "name": "hmget",
+            "calls": 5
+          }
+        ]
+      },
+      {
+        "label": "checkout.complete.replay",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 486,
+        "serializedRequests": 128,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 134,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 4,
+          "get": 59,
+          "lrange": 6,
+          "unlink": 7,
+          "set": 52
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 128
+        },
+        "cpuMsIncludingObserver": 41.161,
+        "networkBytesIncludingObserver": {
+          "input": 1988587,
+          "output": 1995711
+        },
+        "memoryBytes": {
+          "before": 2810664,
+          "after": 2808672
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "get",
+            "calls": 61
+          },
+          {
+            "name": "set",
+            "calls": 54
+          },
+          {
+            "name": "unlink",
+            "calls": 7
+          },
+          {
+            "name": "lrange",
+            "calls": 6
+          },
+          {
+            "name": "evalsha",
+            "calls": 4
+          },
+          {
+            "name": "del",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-checkout.complete.replay",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 73,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.479,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 18001
+        },
+        "memoryBytes": {
+          "before": 2808672,
+          "after": 2809832
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "events.native.enqueue-and-deliver",
+        "category": "action",
+        "success": true,
+        "elapsedMs": 131,
+        "serializedRequests": 4,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 45,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 3,
+          "bzpopmin": 1
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 4
+        },
+        "cpuMsIncludingObserver": 2.444,
+        "networkBytesIncludingObserver": {
+          "input": 2650,
+          "output": 18507
+        },
+        "memoryBytes": {
+          "before": 2811880,
+          "after": 2823848
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "xadd",
+            "calls": 5
+          },
+          {
+            "name": "hmget",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 3
+          },
+          {
+            "name": "del",
+            "calls": 3
+          },
+          {
+            "name": "hget",
+            "calls": 2
+          },
+          {
+            "name": "zrangebyscore",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "diagnostic.drain.after-events.native.enqueue-and-deliver",
+        "category": "async-tail-and-diagnostic-poll",
+        "success": true,
+        "elapsedMs": 62,
+        "serializedRequests": 2,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 18,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": {
+          "evalsha": 2
+        },
+        "serializedByIoredisVersion": {
+          "5.11.1": 2
+        },
+        "cpuMsIncludingObserver": 1.113,
+        "networkBytesIncludingObserver": {
+          "input": 429,
+          "output": 18003
+        },
+        "memoryBytes": {
+          "before": 2823848,
+          "after": 2825000
+        },
+        "applicationClients": {
+          "before": 15,
+          "after": 15
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": [
+          {
+            "name": "llen",
+            "calls": 6
+          },
+          {
+            "name": "zcard",
+            "calls": 6
+          },
+          {
+            "name": "lindex",
+            "calls": 4
+          },
+          {
+            "name": "evalsha",
+            "calls": 2
+          }
+        ]
+      },
+      {
+        "label": "idle.after-shutdown.10s",
+        "category": "idle",
+        "success": true,
+        "elapsedMs": 10017,
+        "serializedRequests": 0,
+        "operationalRequests": 0,
+        "executedCallsIncludingLua": 0,
+        "observerCommandsExcluded": 2,
+        "serializedCommands": null,
+        "serializedByIoredisVersion": null,
+        "cpuMsIncludingObserver": 40.645,
+        "networkBytesIncludingObserver": {
+          "input": 49,
+          "output": 13307
+        },
+        "memoryBytes": {
+          "before": 2635328,
+          "after": 2619968
+        },
+        "applicationClients": {
+          "before": 0,
+          "after": 0
+        },
+        "errors": 0,
+        "rejectedConnections": 0,
+        "evictedKeys": 0,
+        "cronOverlap": false,
+        "completedCronTicks": [],
+        "mostFrequentExecutedCommands": []
+      }
+    ]
+  },
+  "idleProjection": {
+    "before": {
+      "requestsPerMinute": 78.9127575624726,
+      "callsPerMinute": 412.09995615957916,
+      "requestsPerDay": 113634.37088996056,
+      "callsPerDay": 593423.936869794,
+      "requestsPer30Days": 3409031.1266988167,
+      "callsPer30Days": 17802718.10609382
+    },
+    "after": {
+      "requestsPerMinute": 73.83763411914009,
+      "callsPerMinute": 371.03411144867897,
+      "requestsPerDay": 106326.19313156173,
+      "callsPerDay": 534289.1204860978,
+      "requestsPer30Days": 3189785.793946852,
+      "callsPer30Days": 16028673.614582933
+    }
+  },
+  "serviceBenchmarks": {
+    "notificationsBefore": {
+      "label": "before",
+      "computes": 1,
+      "results": [
+        {
+          "name": "orders-changed",
+          "elapsedMs": 108.14190000000008,
+          "commands": {
+            "eval": 100,
+            "publish": 100,
+            "incr": 100
+          },
+          "total": 300
+        },
+        {
+          "name": "stores-changed",
+          "elapsedMs": 92.69079999999985,
+          "commands": {
+            "eval": 100,
+            "publish": 100,
+            "incr": 100
+          },
+          "total": 300
+        },
+        {
+          "name": "finance-reporting-changed",
+          "elapsedMs": 84.21450000000004,
+          "commands": {
+            "eval": 100,
+            "publish": 100,
+            "incr": 100
+          },
+          "total": 300
+        },
+        {
+          "name": "catalog-changed",
+          "elapsedMs": 90.52829999999994,
+          "commands": {
+            "eval": 100,
+            "publish": 100,
+            "incr": 100
+          },
+          "total": 300
+        },
+        {
+          "name": "applications-changed",
+          "elapsedMs": 106.83309999999983,
+          "commands": {
+            "eval": 100,
+            "publish": 100,
+            "incr": 100
+          },
+          "total": 300
+        },
+        {
+          "name": "snapshot-concurrent-100",
+          "elapsedMs": 46.61569999999983,
+          "commands": {
+            "get": 201,
+            "set": 1,
+            "eval": 1
+          },
+          "total": 203
+        },
+        {
+          "name": "snapshot-cached-100",
+          "elapsedMs": 164.05390000000034,
+          "commands": {
+            "get": 200
+          },
+          "total": 200
+        }
+      ]
+    },
+    "notificationsAfter": {
+      "label": "after",
+      "computes": 1,
+      "results": [
+        {
+          "name": "orders-changed",
+          "elapsedMs": 72.3592000000001,
+          "commands": {
+            "publish": 100
+          },
+          "total": 100
+        },
+        {
+          "name": "stores-changed",
+          "elapsedMs": 72.5431000000001,
+          "commands": {
+            "publish": 100
+          },
+          "total": 100
+        },
+        {
+          "name": "finance-reporting-changed",
+          "elapsedMs": 68.04079999999999,
+          "commands": {
+            "publish": 100
+          },
+          "total": 100
+        },
+        {
+          "name": "catalog-changed",
+          "elapsedMs": 76.8916999999999,
+          "commands": {
+            "eval": 100,
+            "publish": 100,
+            "incr": 100
+          },
+          "total": 300
+        },
+        {
+          "name": "applications-changed",
+          "elapsedMs": 73.70640000000003,
+          "commands": {
+            "eval": 100,
+            "publish": 100,
+            "incr": 100
+          },
+          "total": 300
+        },
+        {
+          "name": "snapshot-concurrent-100",
+          "elapsedMs": 42.74070000000006,
+          "commands": {
+            "get": 201,
+            "set": 1,
+            "eval": 1
+          },
+          "total": 203
+        },
+        {
+          "name": "snapshot-cached-100",
+          "elapsedMs": 133.57140000000004,
+          "commands": {
+            "get": 200
+          },
+          "total": 200
+        }
+      ]
+    },
+    "spam": [
+      {
+        "name": "new-reset-budgets-100-before",
+        "elapsedMs": 84.9426,
+        "networkEvals": 100,
+        "commands": {
+          "get": 500,
+          "eval": 100,
+          "expire": 500,
+          "incr": 500
+        },
+        "luaInclusiveTotal": 1600
+      },
+      {
+        "name": "warm-login-budgets-100-before",
+        "elapsedMs": 77.5548,
+        "networkEvals": 100,
+        "commands": {
+          "get": 300,
+          "eval": 100,
+          "incr": 300
+        },
+        "luaInclusiveTotal": 700
+      },
+      {
+        "name": "blocked-login-budgets-100-before",
+        "elapsedMs": 71.4334,
+        "networkEvals": 100,
+        "commands": {
+          "get": 300,
+          "eval": 100,
+          "pttl": 300
+        },
+        "luaInclusiveTotal": 700
+      },
+      {
+        "name": "new-reset-budgets-100-after",
+        "elapsedMs": 75.31740000000008,
+        "networkEvals": 100,
+        "commands": {
+          "get": 500,
+          "set": 500,
+          "eval": 100
+        },
+        "luaInclusiveTotal": 1100
+      },
+      {
+        "name": "warm-login-budgets-100-after",
+        "elapsedMs": 73.86130000000003,
+        "networkEvals": 100,
+        "commands": {
+          "get": 300,
+          "eval": 100,
+          "incr": 300
+        },
+        "luaInclusiveTotal": 700
+      },
+      {
+        "name": "blocked-login-budgets-100-after",
+        "elapsedMs": 91.50990000000002,
+        "networkEvals": 100,
+        "commands": {
+          "get": 300,
+          "eval": 100,
+          "pttl": 300
+        },
+        "luaInclusiveTotal": 700
+      }
+    ]
+  }
+}

@@ -1,54 +1,124 @@
-import type { HttpTypes } from "@medusajs/types"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import Link from "next/link"
+import type { ReactNode } from "react"
+import { LogoWordmark } from "@/components/brand/logo"
+import { Button } from "@/components/ui/button"
+import { CookiePreferencesButton } from "@/features/cookie-consent/components/cookie-preferences-button"
 
-type SiteFooterProps = {
-  categories: HttpTypes.StoreProductCategory[]
+const FOOTER_LINK_GROUPS = [
+  {
+    title: "Tus compras",
+    links: [
+      { label: "Favoritos", href: "/account/favorites" },
+      { label: "Carrito", href: "/cart" },
+      { label: "Mis pedidos", href: "/account/orders" },
+    ],
+  },
+  {
+    title: "Mi cuenta",
+    links: [
+      { label: "Mi perfil", href: "/account" },
+      { label: "Mis direcciones", href: "/account/addresses" },
+    ],
+  },
+]
+
+function FooterLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-11 w-fit max-w-full items-center rounded-sm py-2 text-sm leading-5 text-muted-foreground underline-offset-4 outline-none hover:text-brand-accent-text hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      {children}
+    </Link>
+  )
 }
 
-export function SiteFooter({ categories }: SiteFooterProps) {
+export function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-primary text-primary-foreground">
-      <div className="mx-auto grid w-full max-w-[90rem] gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr] lg:px-10 lg:py-16">
-        <div>
-          <p className="font-sans text-xs font-bold tracking-[0.18em] uppercase opacity-70">
-            mercado / v2
-          </p>
-          <p className="mt-5 max-w-lg text-3xl leading-tight sm:text-4xl">
-            Una vidriera serena para elegir con criterio.
-          </p>
+    <footer className="border-t border-border bg-background text-foreground">
+      <div className="mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-10">
+        <div className="grid gap-10 py-10 sm:py-12 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-10 lg:py-14 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-12">
+          <div className="lg:border-r lg:border-border lg:pr-8 xl:pr-12">
+            <Link
+              href="/"
+              aria-label="USAPEEK, inicio"
+              className="inline-flex min-h-11 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <LogoWordmark width={160} aria-hidden="true" className="h-auto" />
+            </Link>
+            <p className="mt-3 max-w-64 text-sm leading-6 text-muted-foreground">
+              Una vidriera serena para elegir con criterio.
+            </p>
+          </div>
+
+          <nav
+            aria-label="Navegación del pie"
+            className="grid min-w-0 grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 sm:gap-x-8 lg:gap-x-6 xl:gap-x-10"
+          >
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold leading-6">Explorar</h2>
+              <ul className="mt-3">
+                <li>
+                  <FooterLink href="/search">Todo el catálogo</FooterLink>
+                </li>
+              </ul>
+            </div>
+            {FOOTER_LINK_GROUPS.map((group) => (
+              <div key={group.title} className="min-w-0">
+                <h2 className="text-sm font-semibold leading-6">{group.title}</h2>
+                <ul className="mt-3">
+                  {group.links.map((link) => (
+                    <li key={link.href}>
+                      <FooterLink href={link.href}>{link.label}</FooterLink>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
         </div>
 
-        <nav aria-label="Navegación del pie">
-          <p className="font-sans text-xs font-bold tracking-[0.16em] uppercase opacity-70">
-            Explorar
-          </p>
-          <ul className="mt-4 grid gap-1 sm:grid-cols-2">
-            <li>
-              <Link
-                href="/#catalog"
-                className="flex min-h-11 items-center gap-2 font-sans text-sm font-semibold outline-none hover:text-cover-accent-cyan focus-visible:ring-3 focus-visible:ring-cover-accent-cyan/60"
-              >
-                Todo el catálogo
-                <ArrowUpRight aria-hidden="true" className="size-4" />
-              </Link>
-            </li>
-            {categories.slice(0, 5).map((category) => (
-              <li key={category.id}>
+        <div className="flex flex-col gap-5 border-t border-border py-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+          <div>
+            <h2 className="text-sm font-semibold">Sigue tu pedido</h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              Consulta el estado y el seguimiento de tu compra.
+            </p>
+          </div>
+          <Button asChild className="h-11 w-full sm:w-auto">
+            <Link href="/orders/track">
+              Seguir mi pedido
+              <ArrowRight aria-hidden="true" className="size-4" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="flex flex-col gap-2 border-t border-border py-4 text-xs leading-5 text-muted-foreground md:flex-row md:items-center md:justify-between md:gap-6">
+          <p>© {new Date().getFullYear()} usapeek</p>
+          <nav aria-label="Información legal y privacidad">
+            <ul className="flex flex-wrap gap-x-6">
+              <li>
                 <Link
-                  href={`/?category_id=${encodeURIComponent(category.id)}#catalog`}
-                  className="flex min-h-11 items-center font-sans text-sm font-semibold outline-none hover:text-cover-accent-cyan focus-visible:ring-3 focus-visible:ring-cover-accent-cyan/60"
+                  href="/terms"
+                  className="inline-flex min-h-11 items-center rounded-sm underline-offset-4 outline-none hover:text-brand-accent-text hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
-                  {category.name}
+                  Términos y condiciones
                 </Link>
               </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-      <div className="border-t border-primary-foreground/20">
-        <div className="mx-auto flex min-h-14 w-full max-w-[90rem] items-center px-4 font-sans text-xs opacity-70 sm:px-6 lg:px-10">
-          © {new Date().getFullYear()} mercado / v2
+              <li>
+                <Link
+                  href="/privacy"
+                  className="inline-flex min-h-11 items-center rounded-sm underline-offset-4 outline-none hover:text-brand-accent-text hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  Política de privacidad
+                </Link>
+              </li>
+              <li>
+                <CookiePreferencesButton />
+              </li>
+            </ul>
+          </nav>
         </div>
       </div>
     </footer>
