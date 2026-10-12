@@ -4,6 +4,7 @@ import { ProductThumbnail } from "@/components/ui/product-thumbnail"
 import { getMoneyRoundingAdjustment } from "@/lib/money-rounding"
 import { getDiscountSubtotal } from "../discount-subtotal"
 import { formatMoney } from "../presentation"
+import { getCartItemVariantDescription } from "../variant-description"
 
 function OrderSummaryItem({
   item,
@@ -13,15 +14,7 @@ function OrderSummaryItem({
   currency: string
 }) {
   const title = item.product_title ?? item.title
-  const optionValues = item.variant?.options
-    ?.map((option) => option.value.trim())
-    .filter((value) => value && !/^_*default_*$/i.test(value))
-  const variantTitle = item.variant_title?.trim()
-  const variant =
-    optionValues?.join(" / ") ||
-    (variantTitle && !/^(default variant|_*default_*)$/i.test(variantTitle)
-      ? variantTitle
-      : null)
+  const variant = getCartItemVariantDescription(item)
 
   return (
     <li className="flex items-start gap-4">

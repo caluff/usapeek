@@ -43,7 +43,7 @@ export {
 
 type CurrentFinance = Awaited<ReturnType<typeof readOrderFinance>>;
 type FinanceReader = StripeFinanceReader & {
-  paymentIntents: Pick<Stripe.PaymentIntentsResource, "retrieve">;
+  paymentIntents: Pick<Stripe["paymentIntents"], "retrieve">;
 };
 const dataKindSchema = z.enum(["ordinary", "qa_fixture", "unknown"]);
 const payoutEvidenceSchema = z.object({
@@ -138,7 +138,7 @@ export async function recordOrderFinanceProviderFacts(
     );
   const [intent, account] = await Promise.all([
     stripe.paymentIntents.retrieve(payment.data.id),
-    stripe.accounts.retrieve(),
+    stripe.accounts.retrieveCurrent(),
   ]);
   if (
     intent.id !== payment.data.id ||

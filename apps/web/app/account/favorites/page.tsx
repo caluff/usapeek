@@ -1,7 +1,10 @@
 import type { Metadata } from "next"
 import { Heart, PackageOpen } from "lucide-react"
+import { Suspense } from "react"
 
 import { ProductCard } from "@/components/product-card"
+import { ProductGridSkeleton } from "@/components/product-grid-skeleton"
+import { Skeleton } from "@/components/ui/skeleton"
 import { AccountHeading } from "@/features/account/components/account-heading"
 import { AccountEmptyState } from "@/features/account/components/empty-state"
 import { FavoriteButton } from "@/features/account/components/favorite-button"
@@ -12,6 +15,7 @@ import {
   getPageNumber,
 } from "@/features/account/data"
 import { getFavoriteProductIds } from "@/features/account/favorites"
+import { groupOffersByProduct } from "@/features/catalog/offers"
 import { getStorefrontOffers, getStorefrontRegion } from "@/lib/medusa"
 
 export const metadata: Metadata = {
@@ -20,11 +24,35 @@ export const metadata: Metadata = {
     "Vuelve a encontrar los productos que guardaste en USAPEEK, consulta sus ofertas y organiza tus próximas compras.",
 }
 
-export default async function FavoritesPage({
-  searchParams,
-}: {
+type FavoritesPageProps = {
   searchParams: Promise<{ page?: string | string[] }>
-}) {
+}
+
+export default function FavoritesPage(props: FavoritesPageProps) {
+  return (
+    <>
+      <AccountHeading
+        title="Mis favoritos"
+        description="Todo eso que quieres volver a mirar. Guarda productos desde el catálogo y encuéntralos aquí cuando vuelvas."
+      />
+      <Suspense
+        fallback={
+          <div>
+            <Skeleton className="mb-5 h-4 w-40" />
+            <ProductGridSkeleton
+              className="gap-5 sm:grid-cols-2 xl:grid-cols-3"
+              count={6}
+            />
+          </div>
+        }
+      >
+        <FavoriteProducts {...props} />
+      </Suspense>
+    </>
+  )
+}
+
+async function FavoriteProducts({ searchParams }: FavoritesPageProps) {
   const requestedPage = getPageNumber((await searchParams).page)
   const { customer, sdk } = await getAccount()
   const ids = getFavoriteProductIds(customer.metadata)
@@ -37,23 +65,22 @@ export default async function FavoritesPage({
     page * ACCOUNT_PAGE_SIZE,
   )
   const region = pageIds.length ? await getStorefrontRegion() : null
-  const { products } = pageIds.length
-    ? await sdk.store.product.list({
-        id: pageIds,
-        limit: ACCOUNT_PAGE_SIZE,
-        ...(region ? { region_id: region.id } : {}),
-        fields:
-          "id,title,subtitle,description,handle,thumbnail,*images,*categories",
-      })
-    : { products: [] }
-  const offers = region ? await getStorefrontOffers(pageIds, region.id) : []
+  const [{ products }, offers] = await Promise.all([
+    pageIds.length
+      ? sdk.store.product.list({
+          id: pageIds,
+          limit: ACCOUNT_PAGE_SIZE,
+          ...(region ? { region_id: region.id } : {}),
+          fields:
+            "id,title,subtitle,description,handle,thumbnail,*images,*categories",
+        })
+      : { products: [] },
+    region ? getStorefrontOffers(pageIds, region.id) : [],
+  ])
+  const offersByProduct = groupOffersByProduct(offers)
   const productsById = new Map(products.map((product) => [product.id, product]))
   return (
     <>
-      <AccountHeading
-        title="Mis favoritos"
-        description="Todo eso que quieres volver a mirar. Guarda productos desde el catálogo y encuéntralos aquí cuando vuelvas."
-      />
       {ids.length === 0 ? (
         <AccountEmptyState
           icon={<Heart aria-hidden="true" strokeWidth={1.5} />}
@@ -74,9 +101,7 @@ export default async function FavoritesPage({
                 <ProductCard
                   key={id}
                   product={product}
-                  offers={offers.filter(
-                    (offer) => offer.product_id === product.id,
-                  )}
+                  offers={offersByProduct.get(product.id)}
                   isFavorite
                   authenticated
                 />

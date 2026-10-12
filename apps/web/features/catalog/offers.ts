@@ -6,6 +6,18 @@ import type { OfferDTO } from "@mercurjs/types"
 export type StorefrontOffer = OfferDTO &
   Pick<HttpTypes.StoreProductVariant, "inventory_quantity">
 
+export function groupOffersByProduct(offers: readonly StorefrontOffer[]) {
+  const offersByProduct = new Map<string, StorefrontOffer[]>()
+
+  for (const offer of offers) {
+    const productOffers = offersByProduct.get(offer.product_id)
+    if (productOffers) productOffers.push(offer)
+    else offersByProduct.set(offer.product_id, [offer])
+  }
+
+  return offersByProduct
+}
+
 export function getOfferPrice(offer: Pick<OfferDTO, "calculated_price">) {
   const price = offer.calculated_price
   if (

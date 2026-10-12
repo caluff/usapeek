@@ -24,7 +24,7 @@ Invoke-RestMethod http://localhost:9000/health
 ```
 
 La respuesta esperada es `OK`. El workspace declara `tsconfig-paths` 4.2.0 para
-el CLI de Medusa 2.18.0 mediante `packageExtensions`: evita que su llamada
+el CLI de Medusa 2.21.2 mediante `packageExtensions`: evita que su llamada
 `register({})` resuelva la versión 3.15.0 y produzca la advertencia engañosa de
 `ts-node` con `path.isAbsolute(undefined)`.
 
@@ -57,6 +57,54 @@ La configuración de API usa `drainDelay: 60` para espaciar las consultas de las
 colas vacías; no retrasa un trabajo que acaba de llegar ni desactiva la revisión
 de trabajos demorados o interrumpidos. Para detener el entorno local, cerrar los
 procesos de desarrollo y usar `pnpm services:stop`, que conserva los volúmenes.
+
+Para medir Redis local sin leer claves ni valores:
+
+```sh
+pnpm redis:diagnose --seconds 130
+```
+
+El diagnóstico acepta únicamente una dirección de loopback y usa `REDIS_URL`
+del proceso o del `.env` raíz. Informa clientes, comandos, CPU, memoria, tráfico
+y nombres de comandos del slowlog. No cambia configuraciones ni borra datos.
+`INFO` agrega todas las bases lógicas del servidor: para atribuir consumo, evitar
+otras pruebas y separar arranque, reposo y cada operación. El healthcheck Docker
+ejecuta `AUTH` y `PING` cada cinco segundos; aparece separado del trabajo de la
+aplicación. El slowlog es histórico y su tiempo de ejecución excluye la red.
+
+Los contadores incluyen comandos internos de Lua; se distinguen de las peticiones
+enviadas por los clientes y del consumo de CPU, memoria y red en Railway. Un
+pipeline reduce viajes por red, pero conserva sus comandos. En BullMQ 5.13,
+`drainDelay: 60` rige una cola vacía sin trabajo
+demorado; cuando existe trabajo programado, el bloqueo tiene un máximo nativo
+de diez segundos. La revisión de trabajos interrumpidos continúa cada treinta
+segundos. No elevar esos límites ni desactivar recuperaciones para reducir una
+cantidad de comandos sin evaluar su efecto sobre la confiabilidad.
+
+La caché de consultas de Medusa sólo se registra con `MEDUSA_FF_CACHING=true`.
+El cache legacy en memoria, las colas, las sesiones y los locks son independientes.
+Los cron de email y evaluación comercial sólo se registran cuando su integración
+estática está habilitada; los reconciliadores financieros permanecen registrados
+porque también dependen de la configuración persistida en Store. Los cambios de
+flags requieren reiniciar los procesos.
+
+Antes de habilitar nuevamente la caché de consultas después de un período
+desactivada, detener API y worker y ejecutar con su misma configuración Redis:
+
+```sh
+pnpm redis:cache:clear
+```
+
+El comando carga Medusa en modo `server` sin HTTP ni workers, invalida mediante
+la API nativa y verifica que el namespace de caché quede vacío. Un error o claves
+restantes impiden confirmar la limpieza. Después, iniciar API y worker con
+`MEDUSA_FF_CACHING=true` en ambos. No basta con cambiar el flag en un solo servicio:
+durante el período desactivado pudieron quedar entradas antiguas sin invalidar.
+La limpieza es una operación explícita; no se ejecuta en cada arranque ni borra
+colas, sesiones, locks o datos de negocio.
+
+La [auditoría de Redis](develpment/evidence/redis-audit-20261012.md) documenta el
+inventario, las mediciones locales comparativas y sus límites para Railway.
 
 ## Alcance de la copia
 
@@ -133,7 +181,11 @@ incluye en Git. Una futura actualización desde Supabase requiere otra copia
 explícita; el arranque habitual no restaura ni sobrescribe los datos locales.
 
 `pnpm db:migrate` aplica migraciones al destino configurado; no hace falta volver
-a cargar el dump para arrancar. Los tests de integración usan exclusivamente su
+a cargar el dump para arrancar. El comando desactiva el codegen de desarrollo
+durante las migraciones con `MERCUR_DEV_CODEGEN=false`, para no ejecutar una
+descarga de CLI ajena a la actualización del esquema. La generación durante
+`pnpm dev` conserva su configuración habitual. La [actualización a TypeScript 7](develpment/evidence/typescript7-update-20261012.md)
+registra las versiones y migraciones actuales. Los tests de integración usan exclusivamente su
 infraestructura aislada y sus bases desechables, según
 [su guía](../packages/api/integration-tests/http/README.md). No ejecutarlos contra
 `marketplace_local`.

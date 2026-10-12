@@ -14,9 +14,8 @@ import { Suspense } from "react"
 
 import { ProductCard } from "@/components/product-card"
 import { ProductGridSkeleton } from "@/components/product-grid-skeleton"
-import { Skeleton } from "@/components/ui/skeleton"
-import { FavoriteButton } from "@/features/account/components/favorite-button"
-import { getFavoriteProductIds } from "@/features/account/favorites"
+import { ProductFavoriteAction } from "@/features/account/components/product-favorite-action"
+import { groupOffersByProduct } from "@/features/catalog/offers"
 import {
   catalogHref,
   getCatalogPagination,
@@ -152,21 +151,6 @@ async function CatalogResults(props: CatalogSectionProps) {
   )
 }
 
-async function ProductFavorite({
-  customer,
-  productId,
-}: Pick<CatalogSectionProps, "customer"> & { productId: string }) {
-  const account = await customer
-  return (
-    <FavoriteButton
-      productId={productId}
-      saved={getFavoriteProductIds(account?.metadata).includes(productId)}
-      authenticated={Boolean(account)}
-      compact
-    />
-  )
-}
-
 async function CatalogContent(props: CatalogSectionProps) {
   const [result, activeCategoryId, page] = await Promise.all([
     props.result,
@@ -175,6 +159,9 @@ async function CatalogContent(props: CatalogSectionProps) {
   ])
   const activeCategory = Boolean(activeCategoryId)
   const pagination = getCatalogPagination(result, activeCategoryId)
+  const offersByProduct = groupOffersByProduct(
+    result.status === "products" ? result.offers : [],
+  )
   return (
     <>
       {result.status === "products" ? (
@@ -200,23 +187,12 @@ async function CatalogContent(props: CatalogSectionProps) {
               <ProductCard
                 key={product.id}
                 product={product}
-                offers={result.offers.filter(
-                  (offer) => offer.product_id === product.id,
-                )}
+                offers={offersByProduct.get(product.id)}
                 favoriteAction={
-                  <Suspense
-                    fallback={
-                      <Skeleton
-                        className="size-11"
-                        aria-label="Cargando favorito"
-                      />
-                    }
-                  >
-                    <ProductFavorite
-                      customer={props.customer}
-                      productId={product.id}
-                    />
-                  </Suspense>
+                  <ProductFavoriteAction
+                    customer={props.customer}
+                    productId={product.id}
+                  />
                 }
               />
             ))}

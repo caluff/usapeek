@@ -6,6 +6,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getProductImage } from "@/features/catalog/image"
+import { getCartItemVariantDescription } from "../variant-description"
 
 export function CartSheetItem({
   item,
@@ -27,15 +28,7 @@ export function CartSheetItem({
       item.variant?.product?.thumbnail ??
       item.variant?.product?.images?.[0]?.url,
   )
-  const options = item.variant?.options
-    ?.map((option) => option.value.trim())
-    .filter((value) => value && !/^_*default_*$/i.test(value))
-  const variantTitle = item.variant_title?.trim()
-  const variant =
-    options?.join(" / ") ||
-    (variantTitle && !/^(default variant|_*default_*)$/i.test(variantTitle)
-      ? variantTitle
-      : null)
+  const variant = getCartItemVariantDescription(item)
   const href = item.product_handle
     ? `/products/${encodeURIComponent(item.product_handle)}`
     : null

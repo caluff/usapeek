@@ -1,9 +1,11 @@
 import type { Logger, MedusaContainer } from "@medusajs/framework/types";
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
+import { ContainerRegistrationKeys, defineFileConfig } from "@medusajs/framework/utils";
 import { onboardingEmailConfiguration } from "../lib/vendor-onboarding/email";
 import { deliverVendorApplicationNotificationWorkflow } from "../workflows/vendor-application-notifications";
 
 const MAX_NOTIFICATIONS_PER_RUN = 20;
+
+defineFileConfig({ isDisabled: () => process.env.AUTH_EMAIL_ENABLED !== "true" });
 
 export default async function deliverVendorApplicationNotifications(container: MedusaContainer) {
   try {

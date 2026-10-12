@@ -1,7 +1,9 @@
 import type { Logger, MedusaContainer } from "@medusajs/framework/types";
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
+import { ContainerRegistrationKeys, defineFileConfig } from "@medusajs/framework/utils";
 import { commerceAutomationEnabled } from "../lib/commerce-automation/configuration";
 import { evaluateCommerceWorkflow } from "../workflows/evaluate-commerce";
+
+defineFileConfig({ isDisabled: () => !commerceAutomationEnabled() });
 
 export default async function evaluateCommerce(container: MedusaContainer) {
   if (!commerceAutomationEnabled()) return;

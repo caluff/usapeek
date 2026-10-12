@@ -75,13 +75,13 @@ El aviso usa la posición predeterminada junto al acceso de la esquina superior 
 
 One Tap reutiliza la identidad `google`, la creación o vinculación existente, MFA, verificación de correo y adopción validada del carrito. Solo se acepta para clientes; el acceso de los paneles conserva OAuth. No requiere variables públicas nuevas ni copiar secretos a la tienda. La sesión se establece únicamente después de consultar el perfil autorizado.
 
-La suite aislada `packages/api/integration-tests/http/google-one-tap.spec.ts` comprueba el verificador RSA real, credenciales inválidas, prueba alterada o vencida, replay concurrente, creación de clientes, vinculación y MFA nativos. Las pruebas del flujo de sesión compartido se ejecutan con `pnpm --dir apps/web exec tsx --test lib/customer-google-sign-in.test.mjs`. Estas pruebas usan fixtures locales y no autentican cuentas Google reales.
+La suite aislada `packages/api/integration-tests/http/google-one-tap.spec.ts` comprueba el verificador RSA real, credenciales inválidas, prueba alterada o vencida, replay concurrente, creación de clientes, vinculación y MFA nativos. Usa fixtures locales y no autentica cuentas Google reales. Las pruebas unitarias del flujo de sesión compartido se retiraron por solicitud del usuario.
 
 Verificación del 2026-10-06: One Tap HTTP **22/22**, Google OAuth HTTP **23/23**, módulos **53/53** y unidades API **97/97**. Frontend: **12/12** pruebas de Google y cookies por pestaña, más **10/10** regresiones del comprobante. Lint y typecheck raíz y build API aprobados. El comando general `pnpm test:api` se detuvo en la guarda de aislamiento al alcanzar módulos con la configuración de desarrollo; módulos y HTTP se ejecutaron después en PostgreSQL y Redis TLS descartables. Se restauraron los contenedores QA a su estado detenido.
 
 En el navegador integrado se verificaron el botón, navegación al login, barra sin desbordamiento a 320 y 390 px, carga de GIS y bootstrap HTTP 200. El navegador reportó `UiDismissedNoEmbargo` para el aviso FedCM. No se completó un acceso con Google real ni se certificó la configuración actual de Authorized JavaScript origins en Google Cloud.
 
-En desarrollo, el indicador de Next permanece habilitado. Solo el mensaje exacto `[GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token.` se conserva como `console.warn`, para que la indisponibilidad del aviso opcional no registre una incidencia de Next. Los demás mensajes y objetos de error siguen pasando por el manejador original. El filtro se instala antes de cargar GIS, una sola vez por página, y permanece activo para mensajes asíncronos posteriores al cierre del aviso. Producción conserva el comportamiento del SDK. Las regresiones están en `apps/web/lib/google-one-tap-diagnostics.test.mjs`.
+En desarrollo, el indicador de Next permanece habilitado. Solo el mensaje exacto `[GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token.` se conserva como `console.warn`, para que la indisponibilidad del aviso opcional no registre una incidencia de Next. Los demás mensajes y objetos de error siguen pasando por el manejador original. El filtro se instala antes de cargar GIS, una sola vez por página, y permanece activo para mensajes asíncronos posteriores al cierre del aviso. Producción conserva el comportamiento del SDK. Las pruebas unitarias de este filtro se retiraron por solicitud del usuario.
 
 ### Nombres de los perfiles de admin y vendor
 
@@ -111,7 +111,7 @@ pnpm --filter @usapeek/api run auth:contracts:check
 7. Cancelar un intento y comprobar el mensaje local. Reutilizar un callback o cambiar su `state` debe fallar sin crear sesión.
 8. Con sesión de cliente y acceso de vendedor aprobado, abrir `/account/sell` y pulsar **Ir al panel de vendedores**. Debe abrir su tienda o el selector de tiendas sin pedir otra contraseña. Repetir con una sesión iniciada mediante Google. Un miembro desactivado o una tienda sin acceso no debe obtener sesión de vendedor mediante el traspaso.
 
-La suite HTTP `packages/api/integration-tests/http/google-auth.spec.ts` usa una base PostgreSQL descartable y Redis TLS local dedicado. Está desactivada por defecto para no ejecutar fixtures contra la base compartida; las variables y comprobaciones de aislamiento están en el encabezado del archivo. Las pruebas unitarias forman parte de `pnpm test:api`.
+La suite HTTP `packages/api/integration-tests/http/google-auth.spec.ts` usa una base PostgreSQL descartable y Redis TLS local dedicado. Está desactivada por defecto para no ejecutar fixtures contra la base compartida; las variables y comprobaciones de aislamiento están en el encabezado del archivo. Consultar la [guía de integraciones HTTP](../packages/api/integration-tests/http/README.md) antes de ejecutarla.
 
 ## Railway
 

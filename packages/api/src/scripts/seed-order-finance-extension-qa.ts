@@ -30,7 +30,7 @@ import {
   CommissionRateType,
   PayoutAccountStatus,
 } from "@mercurjs/types";
-import Stripe from "stripe";
+import { createStripeClient } from "../lib/stripe-client";
 import { getStripeConnectConfiguration } from "../lib/stripe-connect-configuration";
 import { requireSellerWarehouse } from "../lib/vendor-warehouse/access";
 
@@ -56,7 +56,7 @@ const INSPECTED_UNPAID_FIXTURES = {
     cart_id: "cart_01M2BSEX6CFQAJTTPZF0GHRXQ0",
   },
 };
-const qaOrdersWorkflow = createWorkflow(
+const qaFinanceExtensionOrdersWorkflow = createWorkflow(
   "qa-finance-extension-orders",
   function (input: {
     region_id: string;
@@ -180,7 +180,7 @@ const qaOrdersWorkflow = createWorkflow(
     });
   },
 );
-const qaAuthorizeWorkflow = createWorkflow(
+const qaFinanceExtensionAuthorizeWorkflow = createWorkflow(
   "qa-finance-extension-authorize",
   function (input: { session_id: string }) {
     return new WorkflowResponse(
@@ -188,7 +188,7 @@ const qaAuthorizeWorkflow = createWorkflow(
     );
   },
 );
-const qaCaptureWorkflow = createWorkflow(
+const qaFinanceExtensionCaptureWorkflow = createWorkflow(
   "qa-finance-extension-capture",
   function (input: { payment_id: string }) {
     return new WorkflowResponse(
@@ -197,7 +197,7 @@ const qaCaptureWorkflow = createWorkflow(
   },
 );
 
-const qaCommissionWorkflow = createWorkflow(
+const qaFinanceExtensionCommissionWorkflow = createWorkflow(
   "qa-finance-extension-commission",
   function (input: { item_id: string; commission_rate_id: string }) {
     return new WorkflowResponse(
@@ -219,7 +219,7 @@ const qaCommissionWorkflow = createWorkflow(
 
 // The native workflow does not expose source_transaction. Compose its native
 // provider step and links here so the test charge can fund pending Stripe balance.
-const qaPayoutWorkflow = createWorkflow(
+const qaFinanceExtensionPayoutWorkflow = createWorkflow(
   "qa-finance-extension-payout",
   function (input: {
     order_id: string;
@@ -389,7 +389,7 @@ export default async function seedOrderFinanceExtensionQa({
       "Store A has no existing manual shipping option in its assigned warehouse.",
     );
 
-  const stripe = new Stripe(configuration.apiKey);
+  const stripe = createStripeClient(configuration.apiKey);
   const payoutAccount = sellers[0].payout_account;
   const connectedId = payoutAccount?.data?.id;
   if (scenario === "paid") {
@@ -442,7 +442,7 @@ export default async function seedOrderFinanceExtensionQa({
   const result = resumeUnpaid
     ? inspected
     : (
-        await qaOrdersWorkflow(container).run({
+        await qaFinanceExtensionOrdersWorkflow(container).run({
           input: {
             region_id: regions[0].id,
             customer_id: customers[0].id,
@@ -517,7 +517,9 @@ export default async function seedOrderFinanceExtensionQa({
     },
     { idempotencyKey: `${QA_TAG}:${scenario}:confirm` },
   );
-  const { result: payment } = await qaAuthorizeWorkflow(container).run({
+  const { result: payment } = await qaFinanceExtensionAuthorizeWorkflow(
+    container,
+  ).run({
     input: { session_id: session.id },
   });
   if (!payment) throw new Error("TEST payment was not authorized.");
@@ -563,7 +565,7 @@ export default async function seedOrderFinanceExtensionQa({
         },
       ],
     });
-    await qaCommissionWorkflow(container).run({
+    await qaFinanceExtensionCommissionWorkflow(container).run({
       input: { item_id: firstItems[0].id, commission_rate_id: rates[0].id },
     });
     const { data: lines } = await query.graph({
@@ -589,7 +591,7 @@ export default async function seedOrderFinanceExtensionQa({
       throw new Error(
         "Native commission must total exactly 1.2 before capture and transfer.",
       );
-    await qaCaptureWorkflow(container).run({
+    await qaFinanceExtensionCaptureWorkflow(container).run({
       input: { payment_id: payment.id },
     });
     const captured = await stripe.paymentIntents.retrieve(intent.id);
@@ -606,7 +608,7 @@ export default async function seedOrderFinanceExtensionQa({
       throw new Error(
         "Expected fully captured TEST 34 and original Stripe charge.",
       );
-    const { result: payout } = await qaPayoutWorkflow(container).run({
+    const { result: payout } = await qaFinanceExtensionPayoutWorkflow(container).run({
       input: {
         order_id: first.id,
         account_id: payoutAccount!.id,

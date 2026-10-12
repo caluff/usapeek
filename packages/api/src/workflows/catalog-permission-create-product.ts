@@ -15,6 +15,7 @@ import {
   createProductsWorkflow,
 } from "@mercurjs/core/workflows";
 import type { VendorCreateProductType } from "@mercurjs/core/api/vendor/products/validators";
+import { AttributeType } from "@mercurjs/types";
 import { catalogPermissionLock } from "../lib/catalog-permission/read";
 import {
   prepareCatalogPermissionStep,
@@ -48,9 +49,12 @@ export const catalogPermissionCreateProductWorkflow = createWorkflow(
       input: transform(
         { input, extras },
         ({ input: { seller_id, product } }) => {
-          const { additional_data, ...payload } = product;
+          const { additional_data, attributes, ...payload } = product;
           return {
-            products: [payload],
+            products: [{ ...payload, attributes: attributes?.map((attribute) =>
+              "title" in attribute ? { ...attribute, type: attribute.type === undefined ? undefined :
+                Object.values(AttributeType).find((value) => value === attribute.type) } : attribute,
+            ) }],
             created_by: seller_id,
             additional_data,
           };

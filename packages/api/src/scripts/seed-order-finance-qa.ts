@@ -20,11 +20,11 @@ import {
   createSellersStep,
 } from "@mercurjs/core/workflows";
 import { MercurModules, SellerStatus } from "@mercurjs/types";
-import Stripe from "stripe";
+import { createStripeClient } from "../lib/stripe-client";
 import { getStripeConnectConfiguration } from "../lib/stripe-connect-configuration";
 
 const QA_TAG = "order-finance-2026-09-12";
-const qaSellerWorkflow = createWorkflow("qa-finance-seller", function () {
+const qaFinanceSellerWorkflow = createWorkflow("qa-finance-seller", function () {
   return new WorkflowResponse(
     createSellersStep([
       {
@@ -37,7 +37,7 @@ const qaSellerWorkflow = createWorkflow("qa-finance-seller", function () {
     ]),
   );
 });
-const qaOrdersWorkflow = createWorkflow(
+const qaFinanceOrdersWorkflow = createWorkflow(
   "qa-finance-orders",
   function (input: {
     region_id: string;
@@ -143,7 +143,7 @@ const qaOrdersWorkflow = createWorkflow(
     });
   },
 );
-const qaAuthorizeWorkflow = createWorkflow(
+const qaFinanceAuthorizeWorkflow = createWorkflow(
   "qa-finance-authorize",
   function (input: { session_id: string }) {
     return new WorkflowResponse(
@@ -151,7 +151,7 @@ const qaAuthorizeWorkflow = createWorkflow(
     );
   },
 );
-const qaCaptureWorkflow = createWorkflow(
+const qaFinanceCaptureWorkflow = createWorkflow(
   "qa-finance-capture",
   function (input: { payment_id: string }) {
     return new WorkflowResponse(
@@ -221,8 +221,8 @@ export default async function seedOrderFinanceQa({
       "QA scenario already exists. Inspect existing fixtures; do not duplicate payments.",
     );
   const secondSeller =
-    qaSellers[0] ?? (await qaSellerWorkflow(container).run()).result[0];
-  const { result } = await qaOrdersWorkflow(container).run({
+    qaSellers[0] ?? (await qaFinanceSellerWorkflow(container).run()).result[0];
+  const { result } = await qaFinanceOrdersWorkflow(container).run({
     input: {
       region_id: regions[0].id,
       customer_id: customers[0].id,
@@ -246,7 +246,7 @@ export default async function seedOrderFinanceQa({
   const intentId = session.data?.id;
   if (typeof intentId !== "string")
     throw new Error("Native payment session did not return a payment intent.");
-  const stripe = new Stripe(configuration.apiKey);
+  const stripe = createStripeClient(configuration.apiKey);
   const intent = await stripe.paymentIntents.retrieve(intentId);
   if (intent.livemode || intent.amount !== 3400 || intent.currency !== "usd")
     throw new Error("Unexpected QA payment intent.");
@@ -258,12 +258,12 @@ export default async function seedOrderFinanceQa({
     },
     { idempotencyKey: `${QA_TAG}:${scenario}:confirm` },
   );
-  const { result: payment } = await qaAuthorizeWorkflow(container).run({
+  const { result: payment } = await qaFinanceAuthorizeWorkflow(container).run({
     input: { session_id: session.id },
   });
   if (!payment) throw new Error("The test payment was not authorized.");
   if (scenario === "captured")
-    await qaCaptureWorkflow(container).run({
+    await qaFinanceCaptureWorkflow(container).run({
       input: { payment_id: payment.id },
     });
   logger.info(

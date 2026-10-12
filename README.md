@@ -29,12 +29,12 @@ Las seis fases obligatorias están cerradas. La siguiente verificación funciona
 | Storefront           | `apps/web`                             | Catálogo, cuenta, carrito, checkout y solicitud de vendedor           | `http://localhost:3000`           |
 | Admin                | `apps/admin`                           | Operación del marketplace, revisión de vendedores, catálogo y pedidos | `http://localhost:7000/dashboard` |
 | Vendor               | `apps/vendor`                          | Ofertas, inventario, almacén, envíos, pedidos y cuenta Connect        | `http://localhost:7001/seller`    |
-| API / worker         | `packages/api`                         | Mercur 2.3.3 / Medusa 2.18.0; modos server, worker y shared           | API: `http://localhost:9000`      |
+| API / worker         | `packages/api`                         | Mercur 2.3.7 / Medusa 2.21.2; modos server, worker y shared           | API: `http://localhost:9000`      |
 | Sistema visual       | `packages/ui`                          | Componentes, tokens y motion canónicos para los tres frontends        | —                                 |
 | Tema                 | `packages/theme-sync`                  | Contrato y sincronización de preferencias visuales                    | —                                 |
 | Contratos onboarding | `packages/vendor-onboarding-contracts` | Contratos de transporte compartidos del alta de vendedor              | —                                 |
 
-Las aplicaciones usan Next.js 16.3.4, React 19 y TypeScript. Se comunican con las APIs mediante SDKs; no acceden directamente a PostgreSQL o Redis. El admin Vite integrado está desactivado porque el operador usa su propia aplicación Next.js. PostgreSQL/Supabase persiste datos y Redis participa en caché, eventos, workflows y locks; producción lo provisiona dentro de Railway.
+Las aplicaciones usan Next.js 16.4.0, React 19 y TypeScript 7.0.2. Se comunican con las APIs mediante SDKs; no acceden directamente a PostgreSQL o Redis. El admin Vite integrado está desactivado porque el operador usa su propia aplicación Next.js. PostgreSQL/Supabase persiste datos y Redis participa en caché, eventos, workflows y locks; producción lo provisiona dentro de Railway.
 
 Hay un único workspace pnpm y lockfile raíz. Las versiones, overrides y patches vigentes están en [package.json](package.json), [pnpm-workspace.yaml](pnpm-workspace.yaml) y `pnpm-lock.yaml`; consultar esos contratos antes de actualizar dependencias.
 
@@ -50,8 +50,8 @@ La comisión es configurable en backend; cero o ausencia de regla bloquean la ve
 
 ## Requisitos y entorno local
 
-- Node.js compatible con el mínimo declarado (`>=20.9.0`) y las dependencias instaladas.
-- pnpm 12.0.0, declarado en `packageManager`; usar exclusivamente pnpm.
+- Node.js compatible con el mínimo declarado (`>=24.0.0`) y las dependencias instaladas.
+- pnpm 12.11.2, declarado en `packageManager`; usar exclusivamente pnpm.
 - Docker disponible para PostgreSQL y Redis locales. La configuración de desarrollo y la copia de Supabase están descritas en [desarrollo local](docs/local-development.md). Redis acepta `redis://` en redes privadas confiables, como Railway, y `rediss://` para conexiones TLS externas.
 
 Las credenciales backend van en el `.env` ignorado de la raíz. Medusa encuentra esa raíz desde fuente o artefacto compilado. No copiar secretos a documentación, código ni variables `NEXT_PUBLIC_*`.
@@ -84,27 +84,15 @@ Antes del primer arranque, configurar el entorno y verificar las migraciones de 
 ```bash
 pnpm lint
 pnpm typecheck
-pnpm test
 pnpm build
 pnpm peers check
 ```
 
 `lint:*`, `typecheck:*` y `build:*` tienen variantes `web`, `admin`, `vendor` y `api`, además de lint y typecheck para `ui`. Ejecutar las comprobaciones del área modificada: la lista anterior no obliga a repetir todo el repositorio por cada cambio.
 
-`pnpm test` y `pnpm test:api` ejecutan únicamente las pruebas unitarias rápidas del backend, sin arrancar PostgreSQL, Redis ni proveedores externos. Las integraciones se ejecutan explícitamente cuando cambian los comportamientos que cubren.
+Los tests unitarios y sus comandos se eliminaron a petición del usuario. No existe un comando general `pnpm test`; se conservan las integraciones HTTP y de módulos con ejecución explícita.
 
-| Cambio                                     | Pruebas locales pertinentes                                                                                |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Catálogo, variantes e imágenes             | `pnpm test:catalog`; también se puede seleccionar `test:catalog` en una sola aplicación                    |
-| Finanzas y configuración de comisiones     | `pnpm test:finance`                                                                                        |
-| Autenticación del storefront               | `pnpm --filter @usapeek/web run test:auth`                                                                 |
-| Pedidos, tracking o carrito del storefront | `pnpm --filter @usapeek/web run test:orders`                                                               |
-| Pedidos del vendedor u operador            | `pnpm --filter @usapeek/vendor run test:orders` o `pnpm --filter @usapeek/admin run test:orders`           |
-| Perfil del vendedor u operador             | `pnpm --filter @usapeek/vendor run test:account` o `pnpm --filter @usapeek/admin run test:account`         |
-| Utilidades del sistema visual              | `pnpm test:ui` si cambia la lógica comprobada; un ajuste de CSS no necesita pruebas de finanzas o catálogo |
-| Cambios amplios de una aplicación          | `pnpm test:web`, `pnpm test:admin` o `pnpm test:vendor`                                                    |
-
-Para una función concreta del backend, seleccionar su archivo con `pnpm --filter @usapeek/api run test:unit --runTestsByPath <archivo>`. Para integración, configurar primero la infraestructura aislada y los opt-ins de la [guía](packages/api/integration-tests/http/README.md), y ejecutar el archivo pertinente con `test:integration:http --runTestsByPath <archivo>` o `test:integration:modules --runTestsByPath <archivo>`. Por ejemplo, los cambios de moderación usan `catalog-permission.spec.ts`; los cambios de migraciones o permisos SQL usan `database-hardening.spec.ts` y los módulos afectados. Si se necesitan varias suites HTTP, ejecutarlas en procesos separados para evitar acumular memoria.
+Para integración, configurar primero la infraestructura aislada y los opt-ins de la [guía](packages/api/integration-tests/http/README.md), y ejecutar el archivo pertinente con `pnpm test:api:integration:http --runTestsByPath <archivo>` o `pnpm test:api:integration:modules --runTestsByPath <archivo>`. Por ejemplo, los cambios de moderación usan `catalog-permission.spec.ts`; los cambios de migraciones o permisos SQL usan `database-hardening.spec.ts` y los módulos afectados. Si se necesitan varias suites HTTP, ejecutarlas en procesos separados para evitar acumular memoria.
 
 Para cambios transversales, ampliar la selección a los otros dominios afectados, con los opt-ins necesarios. No ejecutar todas las integraciones por defecto para ajustes visuales o cambios localizados. Las pruebas con Stripe TEST externo requieren su lanzador específico y solo corresponden a cambios de esa integración. Un cambio exclusivamente documental necesita revisión de formato, enlaces y diff; no requiere builds de aplicaciones. No tratar scripts operativos de QA como pruebas unitarias ni ejecutarlos contra datos compartidos sin comprobar su alcance.
 
@@ -132,7 +120,7 @@ Las páginas públicas con `noindex` permanecen rastreables para que el buscador
 lea esa etiqueta. Admin y vendedores publican `Disallow: /`, además de su
 `noindex` existente. Estas directivas no sustituyen la autenticación.
 
-Pruebas: `pnpm --filter @usapeek/web run test:seo`.
+Verificar manualmente los metadatos, `robots.txt` y `sitemap.xml` tras cambiar su generación.
 
 ## Definiciones de infraestructura existentes
 

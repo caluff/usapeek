@@ -61,7 +61,7 @@ corresponde al pedido TEST #16, ya completado y capturado, con vencimiento
 
 Orden recomendado: 1 → 2 → 3 → 4 → 5 → 6. No es necesario bloquear investigación independiente de F05/F06/F10, pero no alterar el alcance autorizado ni validar dinero contra una base todavía incoherente.
 
-Los scripts siguientes existen al preparar este plan; volver a comprobar los manifests si cambian. Para una aplicación, ejecutar `pnpm lint:<app>`, `pnpm typecheck:<app>` y sus pruebas significativas. Para cambios de módulos, workflows, links, configuración o rutas API: `pnpm lint:api`, `pnpm typecheck:api`, `pnpm test:api` y `pnpm build:api`. Si afecta a varias apps/configuración compartida, aplicar los checks raíz correspondientes. `pnpm peers check` aplica si cambian dependencias. Repetir solo checks que un cambio posterior invalide.
+Los scripts siguientes existen al preparar este plan; volver a comprobar los manifests si cambian. Para una aplicación, ejecutar `pnpm lint:<app>`, `pnpm typecheck:<app>` y verificar los flujos afectados. Para cambios de módulos, workflows, links, configuración o rutas API: `pnpm lint:api`, `pnpm typecheck:api` y `pnpm build:api`, más las integraciones pertinentes según la [guía de pruebas aisladas](../../packages/api/integration-tests/http/README.md). Los tests unitarios y sus comandos se retiraron por solicitud del usuario. Si afecta a varias apps/configuración compartida, aplicar los checks raíz correspondientes. `pnpm peers check` aplica si cambian dependencias. Repetir solo checks que un cambio posterior invalide.
 
 Las pruebas de F01–F11 se desarrollan con cada corrección. Phase 6 integra y certifica el resultado; no es el lugar donde comenzar por primera vez las pruebas financieras.
 
@@ -343,7 +343,7 @@ Todas las fases anteriores cumplen salida y tienen pruebas registradas. Identifi
 
 - Backend, proveedor, persistencia y dashboards concuerdan para la misma venta y sus ajustes.
 - Dos compradores no obtienen el último stock; retries no duplican efectos; identidad y permisos se mantienen.
-- No declarar PASS por ausencia de errores unitarios si no se probó el recorrido integrado.
+- No declarar PASS del recorrido integrado solo porque lint y typecheck no presenten errores.
 - Entornos aislados para mutaciones; no limpiar fixtures o datos compartidos sin verificar alcance y autorización.
 
 ### Tareas y pruebas necesarias
@@ -354,7 +354,7 @@ Todas las fases anteriores cumplen salida y tienen pruebas registradas. Identifi
 4. Probar último stock concurrente, cambio de precio/disponibilidad durante checkout, producto deshabilitado en carrito, vendedor suspendido con pedidos activos y conservación de autorizaciones backend.
 5. Verificar los flujos existentes de 3DS/retorno, abandono, expiración y pago fallido; correo, búsqueda e imágenes en el entorno de pruebas según integración realmente usada. No crear nuevas integraciones.
 6. Revisar UX funcional con respuestas lentas/error: contenido independiente visible, loading local, acciones sin duplicación, feedback/retry y operación utilizable en móvil.
-7. Ejecutar `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build` sobre el código final. Ejecutar integración HTTP/módulos mediante scripts existentes después de comprobar que apuntan al entorno aislado. No usar `build:deploy` como requisito de desarrollo. Ejecutar `pnpm peers check` si cambiaron dependencias.
+7. Ejecutar `pnpm lint`, `pnpm typecheck` y `pnpm build` sobre el código final. Ejecutar las integraciones HTTP/módulos pertinentes mediante scripts existentes después de comprobar que apuntan al entorno aislado. No usar `build:deploy` como requisito de desarrollo. Ejecutar `pnpm peers check` si cambiaron dependencias.
 8. Buscar mocks, placeholders y callbacks sin acción en flujos operativos afectados; distinguir demos huérfanas de datos falsos activos. No convertir la limpieza P2 en una reescritura obligatoria.
 9. Revisar cada ítem de Definition of Done financiera de la auditoría con evidencia actual, registrar PASS/FAIL final en el progreso y actualizar el siguiente paso. Una limitación no verificada debe quedar explícita, no como PASS.
 

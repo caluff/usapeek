@@ -12,7 +12,7 @@ import { financeStripeClient } from "../lib/order-finance/provider";
 const PAYOUT = "pout_01M2BSMB0256RCSYVT888NAZMC";
 const SELLER = "sel_01M1SJQH2N0X7K3TG29TEY48EC";
 const ORDER = "order_01M2BSF13DED9M2EHPFEM3PVCJ";
-const repairQaLinkWorkflow = createWorkflow(
+const repairFinanceQaPayoutLinkWorkflow = createWorkflow(
   "repair-finance-qa-payout-link",
   () =>
     new WorkflowResponse(
@@ -63,7 +63,7 @@ export default async function repairFinanceQaPayoutLink({
     filters: { payout_id: PAYOUT },
   });
   assert.equal(links.length, 0, "QA link already exists; do not rerun");
-  await repairQaLinkWorkflow(container).run();
+  await repairFinanceQaPayoutLinkWorkflow(container).run();
   container
     .resolve(ContainerRegistrationKeys.LOGGER)
     .info(

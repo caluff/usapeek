@@ -304,7 +304,7 @@ export async function prepareOrderSettlement(
     );
   const transferGroup = charge.transfer_group ?? `group_${provider.intent.id}`;
   const [platform, balance, transfers, accounts] = await Promise.all([
-    stripe.accounts.retrieve(),
+    stripe.accounts.retrieveCurrent(),
     stripe.balance.retrieve(),
     readOrderTransfers(stripe, {
       order_id: original.order_id,

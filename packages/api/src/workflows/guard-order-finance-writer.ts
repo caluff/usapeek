@@ -15,7 +15,7 @@ type WriterFenceInput = {
   token?: string;
 };
 
-const guardWriterStep = createStep(
+const guardOrderFinanceWriterStep = createStep(
   "guard-order-finance-writer",
   async (input: WriterFenceInput, { container }) => {
     const journal = container.resolve<CommerceAutomationService>(
@@ -56,5 +56,6 @@ const guardWriterStep = createStep(
 
 export const guardOrderFinanceWriterWorkflow = createWorkflow(
   "guard-order-finance-writer",
-  (input: WriterFenceInput) => new WorkflowResponse(guardWriterStep(input)),
+  (input: WriterFenceInput) =>
+    new WorkflowResponse(guardOrderFinanceWriterStep(input)),
 );

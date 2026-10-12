@@ -19,7 +19,8 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
 import type PayoutModule from "@mercurjs/core/modules/payout";
 import type SellerModule from "@mercurjs/core/modules/seller";
 import { MercurModules, PayoutAccountStatus } from "@mercurjs/types";
-import Stripe from "stripe";
+import type Stripe from "stripe";
+import { createStripeClient } from "../../src/lib/stripe-client";
 import { assertNativeFinanceRedis } from "../helpers/native-finance-redis-guard";
 import { useNativeEsmPayoutProvider } from "../helpers/native-esm-provider-loader";
 import { configureNativeFinanceDatabaseTls } from "../helpers/native-finance-database-tls";
@@ -65,7 +66,7 @@ if (!enabled) {
   process.env.STRIPE_PAYOUT_WEBHOOK_SECRET = signingSecret;
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_OfflinePaymentDurability";
   const transport = installWebhookStripeTransport();
-  const stripe = new Stripe(apiKey);
+  const stripe = createStripeClient(apiKey);
   jest.setTimeout(120_000);
 
   medusaIntegrationTestRunner({

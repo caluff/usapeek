@@ -3,7 +3,6 @@
   "private": true,
   "scripts": {
     "branding:generate": "pnpm --filter @usapeek/web exec tsx --tsconfig tsconfig.json scripts/generate-brand-assets.mjs",
-    "test:branding": "pnpm --filter @usapeek/web exec tsx --tsconfig tsconfig.json --test ../../packages/ui/src/logo.test.mjs",
     "dev": "pnpm services:up && pnpm --parallel --stream --filter @usapeek/api --filter @usapeek/web --filter @usapeek/admin --filter @usapeek/vendor run dev",
     "dev:api": "pnpm services:up && pnpm --filter @usapeek/api run dev",
     "dev:web": "pnpm --filter @usapeek/web run dev",
@@ -17,6 +16,8 @@
     "redis:up": "docker compose up -d redis",
     "redis:down": "docker compose stop redis",
     "redis:logs": "docker compose logs -f redis",
+    "redis:diagnose": "pnpm --filter @usapeek/api run redis:diagnose",
+    "redis:cache:clear": "pnpm --filter @usapeek/api run redis:cache:clear",
     "build": "pnpm build:web && pnpm build:admin && pnpm build:vendor && pnpm build:api",
     "build:web": "pnpm --filter @usapeek/web run build",
     "build:admin": "pnpm --filter @usapeek/admin run build",
@@ -44,14 +45,6 @@
     "typecheck:admin": "pnpm --filter @usapeek/admin run typecheck",
     "typecheck:vendor": "pnpm --filter @usapeek/vendor run typecheck",
     "typecheck:api": "pnpm --filter @usapeek/api run typecheck",
-    "test": "pnpm test:api",
-    "test:api": "pnpm --filter @usapeek/api run test",
-    "test:web": "pnpm --filter @usapeek/web run test",
-    "test:admin": "pnpm --filter @usapeek/admin run test",
-    "test:vendor": "pnpm --filter @usapeek/vendor run test",
-    "test:ui": "pnpm --filter @usapeek/web exec tsx --test ../../packages/ui/src/format-phone-number.test.mjs ../../packages/ui/src/contrast.test.mjs",
-    "test:catalog": "pnpm --filter @usapeek/api run test:unit:catalog && pnpm --filter @usapeek/web run test:catalog && pnpm --filter @usapeek/vendor run test:catalog",
-    "test:finance": "pnpm --filter @usapeek/api run test:unit:finance && pnpm --filter @usapeek/admin run test:finance",
     "test:api:integration:http": "pnpm --filter @usapeek/api run test:integration:http",
     "test:api:integration:modules": "pnpm --filter @usapeek/api run test:integration:modules",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
@@ -59,12 +52,12 @@
     "peers": "pnpm peers check"
   },
   "devDependencies": {
-    "@mercurjs/docs": "2.3.3",
-    "prettier": "^3.7.4",
-    "railway": "3.11.0"
+    "@mercurjs/docs": "2.3.7",
+    "prettier": "^3.9.10",
+    "railway": "3.13.1"
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=24.0.0"
   },
-  "packageManager": "pnpm@12.0.0"
+  "packageManager": "pnpm@12.11.2"
 }

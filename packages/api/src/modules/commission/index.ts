@@ -5,6 +5,8 @@ import {
   toMikroOrmEntities,
 } from "@medusajs/framework/utils";
 import { MercurModules } from "@mercurjs/types";
+import nativeCommissionModule from "@mercurjs/core/modules/commission";
+import { CommissionProviderService } from "@mercurjs/core/modules/commission/services";
 import * as models from "./models/native-models";
 import CommissionModuleService from "./service";
 
@@ -20,11 +22,22 @@ const connectionLoader = ModulesSdkUtils.mikroOrmConnectionLoaderFactory({
   moduleModels: nativeModels,
   migrationsPath: nativeMigrationsPath,
 });
+const containerLoader = ModulesSdkUtils.moduleContainerLoaderFactory({
+  moduleModels: Object.fromEntries(
+    nativeModels.map((model) => [model.name, model]),
+  ),
+  moduleRepositories: {},
+  moduleServices: { CommissionProviderService },
+});
 
 export default {
   ...Module(MercurModules.COMMISSION, {
     service: CommissionModuleService,
-    loaders: [connectionLoader],
+    loaders: [
+      connectionLoader,
+      containerLoader,
+      ...(nativeCommissionModule.loaders ?? []),
+    ],
   }),
   runMigrations: ModulesSdkUtils.buildMigrationScript({
     moduleName: MercurModules.COMMISSION,

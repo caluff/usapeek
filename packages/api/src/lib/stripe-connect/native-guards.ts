@@ -1,7 +1,8 @@
 import type { MedusaNextFunction, MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils";
 import { z } from "@medusajs/framework/zod";
-import Stripe from "stripe";
+import type Stripe from "stripe";
+import { createStripeClient } from "../stripe-client";
 import { validateSellerPayoutAccount } from "@mercurjs/core/api/vendor/payout-accounts/helpers";
 import { getStripeConnectConfiguration } from "../stripe-connect-configuration";
 import { getNativeStripeAccountInput, getNativeStripeOnboardingInput } from "./provider-client";
@@ -62,7 +63,7 @@ export async function nativeStripePayoutWebhookGuard(
     // Verify locally before enqueue. The native provider hydrates the account
     // in its subscriber; reconciliation rechecks it under the account lock.
     // Calling that provider here adds a third remote read before the ACK.
-    const stripe = new Stripe(configuration.apiKey);
+    const stripe = createStripeClient(configuration.apiKey);
     let verifiedEvent: Stripe.Event;
     try {
       verifiedEvent = stripe.webhooks.constructEvent(rawData, signature, configuration.webhookSecret);

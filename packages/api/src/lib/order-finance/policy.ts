@@ -16,6 +16,21 @@ const signedDecimal = z.union([
   z.instanceof(BigNumber).transform((value) => value.numeric),
 ]);
 const instant = z.union([z.date(), z.iso.datetime({ offset: true })]);
+const paymentSchema = z.object({
+  id: z.string(),
+  provider_id: z.string(),
+  payment_session_id: z.string().optional(),
+  currency_code: z.string().optional(),
+  amount: decimal,
+  canceled_at: instant.nullable(),
+  data: z.object({ id: z.string(), livemode: z.literal(false) }).passthrough(),
+  captures: z.array(z.object({ id: z.string(), amount: decimal })),
+  refunds: z.array(z.object({
+    id: z.string(),
+    amount: decimal,
+    metadata: z.record(z.string(), z.unknown()).nullable(),
+  })),
+});
 export const financeGroupSchema = z.object({
   id: z.string(),
   cart_id: z.string(),
@@ -31,7 +46,13 @@ export const financeGroupSchema = z.object({
           .object({ pending_difference: signedDecimal.optional() })
           .passthrough()
           .nullable(),
-        payment_collections: z.array(z.object({ id: z.string() })),
+        payment_collections: z.array(z.object({
+          id: z.string(),
+          currency_code: z.string().optional(),
+          amount: decimal.optional(),
+          metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+          payments: z.array(paymentSchema).optional(),
+        })),
         seller: z.object({ id: z.string() }),
         transactions: z.array(
           z.object({
@@ -76,28 +97,8 @@ export const financeGroupSchema = z.object({
             id: z.string(),
             amount: decimal,
             status: z.string(),
-            payments: z.array(
-              z.object({
-                id: z.string(),
-                provider_id: z.string(),
-                payment_session_id: z.string().optional(),
-                amount: decimal,
-                canceled_at: instant.nullable(),
-                data: z
-                  .object({ id: z.string(), livemode: z.literal(false) })
-                  .passthrough(),
-                captures: z.array(
-                  z.object({ id: z.string(), amount: decimal }),
-                ),
-                refunds: z.array(
-                  z.object({
-                    id: z.string(),
-                    amount: decimal,
-                    metadata: z.record(z.string(), z.unknown()).nullable(),
-                  }),
-                ),
-              }),
-            ),
+            metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+            payments: z.array(paymentSchema),
           }),
         }),
       }),

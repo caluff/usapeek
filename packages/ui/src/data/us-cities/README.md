@@ -22,9 +22,3 @@ Invoke-WebRequest -Uri 'https://download.geonames.org/export/zip/US.zip' -OutFil
 ```
 
 The importer validates all state buckets before writing, and prints the source hash and counts. An archive with the recorded hash reproduces these files. The source URL can change; after an intentional refresh, review the diff and update this file's retrieval date, hash, counts, and any license changes.
-
-Run the catalog regression tests with the existing vendor TypeScript test runner:
-
-```powershell
-pnpm --dir apps/vendor exec tsx --test ../../packages/ui/tests/us-address-data.test.ts
-```

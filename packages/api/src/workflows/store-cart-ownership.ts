@@ -42,7 +42,7 @@ export const resolveGuestCartCustomerStep = createStep(
   },
 );
 
-export const createStoreCartWorkflow = createWorkflow(
+const createStoreCartWithOwnershipWorkflow = createWorkflow(
   "create-store-cart-with-ownership",
   function (input: CreateCartWorkflowInputDTO & AdditionalData) {
     // Medusa's transform resolver reserves { key, value } for internal entries.
@@ -58,7 +58,7 @@ export const createStoreCartWorkflow = createWorkflow(
 
 type UpdateInput = { cart: UpdateCartWorkflowInputDTO & AdditionalData; customer_id?: string };
 
-export const updateStoreCartWorkflow = createWorkflow(
+const updateStoreCartWithOwnershipWorkflow = createWorkflow(
   "update-store-cart-with-ownership",
   function (input: UpdateInput) {
     acquireLockStep({ key: input.cart.id, timeout: 2, ttl: 10, executeOnSubWorkflow: true });
@@ -88,7 +88,7 @@ export const updateStoreCartWorkflow = createWorkflow(
 
 // The native transfer reads before acquiring its lock. Recheck the owner while
 // holding the cart lock so two authenticated requests cannot adopt the same cart.
-export const transferStoreCartWorkflow = createWorkflow(
+const transferStoreCartWithOwnershipWorkflow = createWorkflow(
   "transfer-store-cart-with-ownership",
   function (input: { id: string; customer_id: string } & AdditionalData) {
     acquireLockStep({ key: input.id, timeout: 2, ttl: 10, executeOnSubWorkflow: true });
@@ -100,3 +100,9 @@ export const transferStoreCartWorkflow = createWorkflow(
     return new WorkflowResponse(void 0);
   },
 );
+
+export {
+  createStoreCartWithOwnershipWorkflow as createStoreCartWorkflow,
+  updateStoreCartWithOwnershipWorkflow as updateStoreCartWorkflow,
+  transferStoreCartWithOwnershipWorkflow as transferStoreCartWorkflow,
+};

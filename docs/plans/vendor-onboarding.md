@@ -660,12 +660,13 @@ links and genuine empty/error/loading states; no demo records in operational
 views. Coordinator owns browser verification at mobile and desktop widths,
 including light/dark login comparison with the existing vendor screen.
 
-Run targeted lint/typecheck/tests for every changed application plus API lint,
-typecheck, unit tests, HTTP/module integration tests, and API build. At final
-integration run root lint/typecheck/tests/build and `pnpm peers check` if workspace
-dependencies changed. Add new test globs to each app's existing test script;
-vendor currently runs only `demo-data.test.ts`, which would miss new feature
-tests. Run the contract generator in check mode from a clean checkout.
+Run targeted lint/typecheck and verify the affected flows for every changed
+application, plus API lint, typecheck, relevant isolated HTTP/module integration
+tests, and API build. Unit tests and their commands were removed at the user's
+request; consult the [HTTP integration guide](../../packages/api/integration-tests/http/README.md)
+before running retained suites. At final integration run root lint/typecheck/build
+and `pnpm peers check` if workspace dependencies changed. Run the contract
+generator in check mode from a clean checkout.
 
 Coordinator-reported baseline (not re-run by this planning worker): web 26 tests
 pass; admin 9/10 pass, with a preexisting Railway service-name regex expecting

@@ -38,10 +38,9 @@ set and overwrite `X-Forwarded-Proto` with the original client protocol. HSTS
 does not secure a client's first HTTP request. In Railway, use HTTPS URLs
 directly for API calls: the edge's 301 can turn a redirected POST into a GET.
 
-Run the routing regression checks with
-`pnpm --filter @usapeek/web exec tsx --test ../../.railway/https.test.mjs`.
-These checks exercise the application configuration; they do not verify deployed
-certificates or the remote edge. See Railway's [edge behavior](https://docs.railway.com/networking/public-networking/specs-and-limits)
+The local routing unit checks were removed at the user's request. Verify redirects,
+HSTS and certificates against the intended deployment when changing routing.
+See Railway's [edge behavior](https://docs.railway.com/networking/public-networking/specs-and-limits)
 and [health check requirements](https://docs.railway.com/deployments/healthchecks).
 
 PostgreSQL remains external. Redis is provisioned in Railway and API/worker use

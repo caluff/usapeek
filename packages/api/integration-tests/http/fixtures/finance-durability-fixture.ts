@@ -4,6 +4,8 @@ import {
   authorizePaymentSessionStep,
   createLinksWorkflow,
   createOrderShipmentWorkflow,
+  createRbacPoliciesWorkflow,
+  createRbacRolesWorkflow,
   createShippingOptionsWorkflow,
   createStockLocationsWorkflow,
   createUsersWorkflow,
@@ -15,6 +17,7 @@ import type {
   IOrderModuleService,
   IPaymentModuleService,
   IProductModuleService,
+  IRbacModuleService,
   LinkDefinition,
   MedusaContainer,
 } from "@medusajs/framework/types";
@@ -22,6 +25,7 @@ import {
   ContainerRegistrationKeys,
   MathBN,
   Modules,
+  PolicyOperation,
 } from "@medusajs/framework/utils";
 import {
   createWorkflow,
@@ -135,8 +139,50 @@ export async function createFinanceDurabilityFixture(
     });
   }
 
+  const rbac = container.resolve<IRbacModuleService>(Modules.RBAC);
+  const policyIds: string[] = [];
+  for (const [resource, operation] of [
+    ["order", PolicyOperation.read],
+    ["order", PolicyOperation.update],
+    ["payment", PolicyOperation.read],
+    ["payment", PolicyOperation.update],
+    ["capture", PolicyOperation.create],
+    ["refund", PolicyOperation.create],
+    ["payment_collection", PolicyOperation.read],
+    ["payment_collection", PolicyOperation.update],
+    ["return", PolicyOperation.read],
+    ["return", PolicyOperation.create],
+    ["return", PolicyOperation.update],
+    ["return", PolicyOperation.delete],
+    ["order_change", PolicyOperation.read],
+    ["order_change", PolicyOperation.create],
+    ["order_change", PolicyOperation.update],
+  ] as const) {
+    const existing = await rbac.listRbacPolicies({ resource, operation });
+    if (existing.length) policyIds.push(...existing.map((policy) => policy.id));
+    else {
+      const { result } = await createRbacPoliciesWorkflow(container).run({
+        input: {
+          policies: [{ key: `${resource}:${operation}`, resource, operation }],
+        },
+      });
+      policyIds.push(...result.map((policy) => policy.id));
+    }
+  }
+  const { result: roles } = await createRbacRolesWorkflow(container).run({
+    input: {
+      roles: [{ name: `finance-durability-${id}`, policy_ids: policyIds }],
+    },
+  });
   const { result: users } = await createUsersWorkflow(container).run({
-    input: { users: [{ email: `finance-durability-${id}@example.invalid` }] },
+    input: {
+      users: [
+        {
+          email: `finance-durability-${id}@example.invalid`,
+          roles: [roles[0].id],
+        },
+      ],
+    },
   });
   const actorId = users[0].id;
   await requireFinanceOperator(container, actorId);

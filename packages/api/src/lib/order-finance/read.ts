@@ -28,6 +28,7 @@ import {
   originalSaleSchema,
   type OriginalSale,
 } from "./snapshot";
+import { normalizeNativeOrderPayments } from "./native-payments";
 
 export type FinanceActor = {
   actor_id: string;
@@ -44,7 +45,7 @@ const GROUP_FIELDS = [
   "orders.currency_code",
   "orders.total",
   "orders.summary",
-  "orders.payment_collections.id",
+  ...["id", "amount", "currency_code", "metadata"].map((field) => `orders.payment_collections.${field}`),
   "orders.seller.id",
   "orders.fulfillments.id",
   "orders.fulfillments.canceled_at",
@@ -67,10 +68,12 @@ const GROUP_FIELDS = [
   "orders.cart.payment_collection.id",
   "orders.cart.payment_collection.amount",
   "orders.cart.payment_collection.status",
+  "orders.cart.payment_collection.metadata",
   ...[
     "id",
     "amount",
     "provider_id",
+    "currency_code",
     "payment_session_id",
     "canceled_at",
     "data",
@@ -80,6 +83,11 @@ const GROUP_FIELDS = [
     "refunds.amount",
     "refunds.metadata",
   ].map((field) => `orders.cart.payment_collection.payments.${field}`),
+  ...[
+    "id", "amount", "provider_id", "currency_code", "payment_session_id",
+    "canceled_at", "data", "captures.id", "captures.amount",
+    "refunds.id", "refunds.amount", "refunds.metadata",
+  ].map((field) => `orders.payment_collections.payments.${field}`),
 ];
 
 export async function readOrderFinance(
@@ -164,7 +172,7 @@ export async function readOrderFinance(
       "No se pudo verificar el pago y el reparto de este pedido.",
     );
   }
-  const group = parsed.data;
+  let group = parsed.data;
   if (
     actor.customer_id !== undefined &&
     group.orders.find((order) => order.id === orderId)?.customer_id !==
@@ -329,6 +337,15 @@ export async function readOrderFinance(
         : {}),
     });
   }
+  const nativePayments = normalizeNativeOrderPayments(
+    group,
+    operations.flatMap((operation) => {
+      const result = financeOperationSchema.safeParse(operation.result);
+      return result.success ? [{ id: operation.id, result: result.data }] : [];
+    }),
+    finalCapture?.orders ?? allocation.orders,
+  );
+  group = nativePayments.group;
   const sellerId = group.orders.find((order) => order.id === orderId)?.seller
     .id;
   const matchingPayouts = payoutLinks.data.filter((link) => {
@@ -416,17 +433,19 @@ export async function readOrderFinance(
         "Los ajustes y la transferencia requieren conciliación con el derecho original de la tienda.";
     }
   }
-  if (originalProblem) {
-    view.finance.refund = { allowed: false, reason: originalProblem };
+  const paymentProblem = nativePayments.problem;
+  if (originalProblem || paymentProblem) {
+    const reason = originalProblem ?? paymentProblem!;
+    view.finance.refund = { allowed: false, reason };
     view.finance.capture = {
       ...view.finance.capture,
       allowed: false,
-      reason: originalProblem,
+      reason,
     };
     view.finance.cancellation = {
       ...view.finance.cancellation,
       allowed: false,
-      reason: originalProblem,
+      reason,
     };
   }
   if (pendingChanges.data.length) {
@@ -466,9 +485,13 @@ export async function readOrderFinance(
       pendingChanges.data.length > 0 || activeReturns.data.length > 0,
     financialProblem:
       originalProblem ??
+      paymentProblem ??
       payoutProblem ??
       (invalidOperation
         ? "Hay un registro financiero que requiere conciliación."
         : null),
+    refundPaymentId: nativePayments.refundPaymentIds.get(orderId) ??
+      group.orders[0].cart.payment_collection.payments[0]?.id,
+    nativeSplit: nativePayments.nativeSplit,
   };
 }

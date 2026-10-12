@@ -43,7 +43,7 @@ Mercur 2.3.3 `createSellerAccountWorkflow` and `approveSellerWorkflow` emit sell
 
 ## Verification history
 
-The current order-email suites run with `pnpm --dir packages/api exec jest --config jest.unit.config.cjs --runInBand --forceExit --runTestsByPath src/workflows/__tests__/order-email-notifications.unit.test.ts src/modules/resend/__tests__/order-templates.unit.test.ts`. They exercise native event selection, guest link payloads, persisted notification replay, retry identity, suppression/state guards, error propagation, template escaping and safe action URLs. They mock delivery dependencies and do not send real emails. They do not establish inbox delivery or verify a live sender domain.
+The order-email unit suites were removed at the user's request. They previously exercised native event selection, guest link payloads, persisted notification replay, retry identity, suppression/state guards, error propagation, template escaping and safe action URLs. They mocked delivery dependencies and did not send real emails. Their historical results do not establish current behavior, inbox delivery or a live sender domain.
 
 Earlier provider unit suites were removed at the user's request. Those former suites mocked the Resend SDK; their retry fixtures exercised the installed Medusa notification service against an in-memory repository and simulated locking. Those earlier suites are no longer executable in this checkout.
 

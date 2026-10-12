@@ -142,7 +142,7 @@ if (!enabled) {
         const missing = operations.filter(operation => !policies.some(policy => policy.operation === operation));
         if (missing.length) {
           const { result: created } = await createRbacPoliciesWorkflow(getContainer()).run({ input: {
-            policies: missing.map(operation => ({ resource: "seller", operation })),
+            policies: missing.map(operation => ({ key: `seller:${operation}`, resource: "seller", operation })),
           } });
           created.forEach(policy => track("rbac_policy", policy.id));
           policies.push(...created);

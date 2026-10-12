@@ -15,7 +15,7 @@ import {
 import { PAUSED_PRODUCTS_KEY, pausedProducts } from "../lib/catalog/sale-pause";
 
 type Input = { seller_id: string; product_id: string; paused: boolean };
-const prepareSaleStatus = createStep(
+const prepareProductSaleStatusStep = createStep(
   "prepare-product-sale-status",
   async (input: Input, { container }) => {
     if (!input.seller_id)
@@ -67,7 +67,7 @@ export const setProductSaleStatusWorkflow = createWorkflow(
       timeout: 10,
     }));
     acquireLockStep(lock);
-    const update = prepareSaleStatus(input);
+    const update = prepareProductSaleStatusStep(input);
     updateSellersWorkflow.runAsStep({ input: update });
     releaseLockStep(lock);
     return new WorkflowResponse({ success: true });

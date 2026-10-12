@@ -91,7 +91,6 @@ Al cambiar de dominio, actualizar esta variable y generar un nuevo build.
 
 ```sh
 pnpm branding:generate
-pnpm test:branding
 ```
 
 El generador renderiza los componentes canónicos a SVG y utiliza el rasterizador
@@ -100,6 +99,7 @@ vector y se reservan para formatos de plataforma que los necesitan. No editar a
 mano las copias generadas: cambiar la geometría en `packages/ui/src/logo.tsx`,
 regenerar y guardar todos los assets resultantes juntos.
 
-Las pruebas comprueban accesibilidad, proporciones, paleta, consistencia entre
-aplicaciones, entradas ICO y margen maskable. La integración visual se verifica
-en escritorio/móvil y en ambos temas.
+Verificar accesibilidad, proporciones, paleta, consistencia entre aplicaciones,
+entradas ICO y margen maskable al regenerar los assets. La integración visual
+se verifica en escritorio/móvil y en ambos temas. Las pruebas unitarias de
+branding se retiraron por solicitud del usuario.

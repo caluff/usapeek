@@ -13,16 +13,24 @@ import { ContainerRegistrationKeys, Modules, PolicyOperation } from "@medusajs/f
 import { createStep, createWorkflow, StepResponse, WorkflowResponse } from "@medusajs/framework/workflows-sdk";
 import { medusaIntegrationTestRunner } from "@medusajs/test-utils";
 import { createApiKeysWorkflow, createLinksWorkflow, createRbacPoliciesWorkflow, createRbacRolesWorkflow, createSalesChannelsWorkflow, createStockLocationsWorkflow, createUsersWorkflow, linkSalesChannelsToApiKeyWorkflow, updateProductsWorkflow, updateStoresWorkflow } from "@medusajs/core-flows";
-import { approveSellerWorkflow, createProductsWorkflow, createSellerAccountWorkflow, createSellerShippingProfilesWorkflow } from "@mercurjs/core/workflows";
+import { approveSellerWorkflow, createProductsWorkflow, createSellerAccountWorkflow, createSellerDefaultRolesStep, createSellerShippingProfilesWorkflow } from "@mercurjs/core/workflows";
 import { AttributeType, MercurModules, ProductStatus } from "@mercurjs/types";
 import type SellerModule from "@mercurjs/core/modules/seller";
 import type OfferModule from "@mercurjs/core/modules/offer";
 import type ProductEditModule from "@mercurjs/core/modules/product-edit";
+import type RbacModule from "@medusajs/medusa/rbac";
 import { CATALOG_MEDIA_MODULE } from "../../src/modules/catalog-media";
 import type CatalogMediaService from "../../src/modules/catalog-media/service";
 import { VENDOR_ONBOARDING_MODULE } from "../../src/modules/vendor-onboarding";
 import type VendorOnboardingService from "../../src/modules/vendor-onboarding/service";
 import { assertOffersNotPaused } from "../../src/lib/catalog/sale-pause";
+
+const restoreCatalogVendorRolesWorkflow = createWorkflow(
+  "catalog-permission-test-restore-vendor-roles",
+  function () {
+    return new WorkflowResponse(createSellerDefaultRolesStep());
+  },
+);
 
 const createCatalogPermissionImageFixtureStep = createStep(
   "catalog-permission-test-image-fixture",
@@ -145,7 +153,7 @@ if (!enabled) {
             const existing = await rbac.listRbacPolicies({ resource, operation });
             if (existing.length) policyIds.push(...existing.map(policy => policy.id));
             else {
-              const { result } = await createRbacPoliciesWorkflow(getContainer()).run({ input: { policies: [{ resource, operation }] } });
+              const { result } = await createRbacPoliciesWorkflow(getContainer()).run({ input: { policies: [{ key: `${resource}:${operation}`, resource, operation }] } });
               policyIds.push(...result.map(policy => policy.id));
             }
           }
@@ -261,6 +269,9 @@ if (!enabled) {
         return response.data.product_change;
       }
       beforeEach(async () => {
+        // The runner restores tables between cases after native bootstrap ran.
+        await getContainer().resolve<InstanceType<typeof RbacModule.service>>(Modules.RBAC).__hooks.onApplicationStart();
+        await restoreCatalogVendorRolesWorkflow(getContainer()).run({ input: undefined });
         const { data: stores } = await getContainer().resolve(ContainerRegistrationKeys.QUERY).graph({ entity: "store", fields: ["id"] });
         await updateStoresWorkflow(getContainer()).run({ input: { selector: { id: stores[0].id }, update: { supported_currencies: [{ currency_code: "usd", is_default: true }] } } });
       });

@@ -24,7 +24,7 @@ export const refundAllocatedPaymentWorkflow = createWorkflow(
   },
 );
 
-export const recordFinalCaptureWorkflow = createWorkflow(
+const recordFinalAllocatedCaptureWorkflow = createWorkflow(
   "record-final-allocated-capture",
   function (input: CreateCaptureDTO) {
     return new WorkflowResponse(capturePaymentStep(input));
@@ -69,4 +69,21 @@ export const closeSharedCollectionWorkflow = createWorkflow(
   },
 );
 
+export const freezeFinalCaptureAllocationWorkflow = createWorkflow(
+  "freeze-final-capture-allocation",
+  function (input: {
+    collection_id: string;
+    metadata: Record<string, unknown>;
+  }) {
+    return new WorkflowResponse(
+      updatePaymentCollectionStep({
+        selector: { id: input.collection_id },
+        update: { metadata: input.metadata },
+      }),
+    );
+  },
+);
+
 export { createOrderCreditLinesWorkflow };
+
+export { recordFinalAllocatedCaptureWorkflow as recordFinalCaptureWorkflow };

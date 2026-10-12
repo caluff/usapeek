@@ -12,7 +12,8 @@ import type { HttpTypes, IPaymentModuleService } from "@medusajs/framework/types
 import { ContainerRegistrationKeys, Modules, PolicyOperation } from "@medusajs/framework/utils";
 import { createRbacPoliciesWorkflow, updateRbacRolesWorkflow } from "@medusajs/core-flows";
 import { medusaIntegrationTestRunner } from "@medusajs/test-utils";
-import Stripe from "stripe";
+import type Stripe from "stripe";
+import { createStripeClient } from "../../src/lib/stripe-client";
 import type { PaymentCaptureSettingsResponse } from "../../src/lib/order-finance/contracts";
 import { capturePreparedPurchaseWorkflow } from "../../src/workflows/capture-prepared-purchase";
 import { reconcileAutomaticCapturesWorkflow } from "../../src/workflows/reconcile-automatic-captures";
@@ -47,7 +48,7 @@ if (process.env.AUTOMATIC_CAPTURE_STRIPE_TESTS !== "disposable-stripe-test") {
   process.env.STRIPE_WEBHOOK_SECRET = `whsec_${runId}`;
   process.env.STRIPE_PAYOUT_WEBHOOK_SECRET = `whsec_${runId}`;
   process.env.FINANCE_CHECKOUT_DATA_KIND = "qa_fixture";
-  const stripe = new Stripe(apiKey, { maxNetworkRetries: 2, timeout: 30_000 });
+  const stripe = createStripeClient(apiKey, { maxNetworkRetries: 2, timeout: 30_000 });
   const intents: string[] = [];
   jest.setTimeout(180_000);
 

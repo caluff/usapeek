@@ -1,7 +1,8 @@
 import type SellerModule from "@mercurjs/core/modules/seller";
-import type { MedusaContainer, IAuthModuleService } from "@medusajs/framework/types";
+import type { MedusaContainer, IAuthModuleService, IRbacModuleService } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
 import { MercurModules, type SellerMemberDTO } from "@mercurjs/types";
+import { z } from "@medusajs/framework/zod";
 import type VendorOnboardingService from "../../modules/vendor-onboarding/service";
 import { VENDOR_ONBOARDING_MODULE } from "../../modules/vendor-onboarding";
 import { OnboardingError } from "./errors";
@@ -73,9 +74,13 @@ async function readApplicant(container: MedusaContainer, input: ApplicantIdentit
 
 export async function requireReviewer(container: MedusaContainer, userId: string, operation: "read" | "update") {
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
-  const { data: users } = await query.graph({ entity: "user", fields: ["id", "rbac_roles.id"], filters: { id: userId } }, { cache: { enable: false } });
-  const roles = users[0]?.rbac_roles?.flatMap(role => role ? [role.id] : []) || [];
-  const rbac = container.resolve(Modules.RBAC);
+  // Medusa's generated User omits this feature-flagged relation; query the
+  // native link entry point and validate its selected identity fields instead.
+  const { data }: { data: unknown } = await query.graph({ entity: "user_rbac_role", fields: ["user_id", "rbac_role_id"], filters: { user_id: userId } }, { cache: { enable: false } });
+  const links = z.array(z.object({ user_id: z.literal(userId), rbac_role_id: z.string().min(1) })).safeParse(data);
+  if (!links.success) throw new OnboardingError("review_forbidden", 403);
+  const roles = [...new Set(links.data.map(link => link.rbac_role_id))];
+  const rbac = container.resolve<IRbacModuleService>(Modules.RBAC);
   const policies = (await Promise.all(roles.map(id => rbac.listPoliciesForRole(id)))).flat();
   if (!policies.some(policy => ["seller", "*"].includes(policy.resource) && [operation, "*"].includes(policy.operation))) throw new OnboardingError("review_forbidden", 403);
 }

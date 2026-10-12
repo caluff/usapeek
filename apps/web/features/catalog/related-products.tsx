@@ -5,7 +5,7 @@ import Link from "next/link"
 import { getStorefrontCatalog } from "@/lib/medusa"
 import { catalogHref } from "./catalog-navigation"
 import { getProductImage } from "./image"
-import { formatPrice, getLowestOfferPrice } from "./offers"
+import { formatPrice, getLowestOfferPrice, groupOffersByProduct } from "./offers"
 
 export async function RelatedProducts({
   product,
@@ -19,6 +19,9 @@ export async function RelatedProducts({
       ? result.products.filter((item) => item.id !== product.id).slice(0, 4)
       : []
   const href = catalogHref({ categoryId: category?.id })
+  const offersByProduct = groupOffersByProduct(
+    result.status === "products" ? result.offers : [],
+  )
   return (
     <section
       className="mt-8 border-t border-border pt-6"
@@ -45,7 +48,7 @@ export async function RelatedProducts({
               item.thumbnail ?? item.images?.[0]?.url,
             )
             const price = getLowestOfferPrice(
-              result.offers.filter((offer) => offer.product_id === item.id),
+              offersByProduct.get(item.id) ?? [],
             )
             return (
               <Link

@@ -214,7 +214,7 @@ if (process.env.ORDER_EDIT_PROTECTION_TESTS !== "disposable-local") {
             const existing = await rbac.listRbacPolicies({ resource, operation });
             if (existing.length) policyIds.push(...existing.map(policy => policy.id));
             else {
-              const { result } = await createRbacPoliciesWorkflow(getContainer()).run({ input: { policies: [{ resource, operation }] } });
+              const { result } = await createRbacPoliciesWorkflow(getContainer()).run({ input: { policies: [{ key: `${resource}:${operation}`, resource, operation }] } });
               policyIds.push(...result.map(policy => policy.id));
             }
           }

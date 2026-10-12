@@ -10,9 +10,9 @@
 ## Project stack
 
 - pnpm workspace with a single root lockfile.
-- Next.js 16 App Router, React 19, TypeScript, and Tailwind CSS 4.
+- Next.js 16 App Router, React 19, TypeScript 7, and Tailwind CSS 4.
 - Editable shadcn/ui-style primitives, Radix UI, and Lucide icons.
-- Mercur 2.3.3 on Medusa 2.18.0.
+- Mercur 2.3.7 on Medusa 2.21.2.
 - PostgreSQL for persistence and Redis for cache, events, workflows, and locking.
 - Railway Infrastructure as Code under `.railway/`.
 - date-fns for date parsing, display, and calendar operations where needed.
@@ -388,9 +388,9 @@ During implementation:
 - Select tests by the behavior changed, using the commands in the root README.
   Do not run the full API integration suite for localized changes or run backend
   integrations for CSS, layout, copy or animation changes alone.
-- `pnpm test` runs only API unit tests. Prefer the affected unit file or the
-  `test:catalog` / `test:finance` groups when the change is local. Use application
-  `test:auth`, `test:orders` or `test:account` groups for those frontend changes.
+- Unit tests and their runners were removed at the user's request. There is no
+  general `pnpm test` command; the remaining suites are explicit HTTP/module
+  integrations and require their isolated environment.
 - Run HTTP/module integrations only when the change affects their persistence,
   authorization, concurrency, compensation or cross-module behavior. Select the
   relevant files with `--runTestsByPath`; run multiple HTTP files in separate
@@ -409,13 +409,13 @@ Useful commands:
 ```bash
 pnpm lint
 pnpm typecheck
-pnpm test
 pnpm build
 pnpm peers check
 ```
 
-Targeted variants are available as `lint:*`, `typecheck:*`, `test:*`, and
-`build:*` for `web`, `admin`, `vendor`, and `api`.
+Targeted variants are available as `lint:*`, `typecheck:*`, and `build:*` for
+`web`, `admin`, `vendor`, and `api`. Integration runners are
+`test:api:integration:http` and `test:api:integration:modules`.
 
 - For changes limited to one application, the completion gate is its targeted lint and typecheck plus the closest meaningful tests.
 - For changes to Medusa modules, workflows, links, configuration, or API routes, the completion gate is API lint, typecheck, tests, and build.

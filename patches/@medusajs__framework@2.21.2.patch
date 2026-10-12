@@ -1,0 +1,167 @@
+diff --git a/dist/http/router.js b/dist/http/router.js
+index 22eb991..af9a494 100644
+--- a/dist/http/router.js
++++ b/dist/http/router.js
+@@ -24,6 +24,7 @@ const middleware_file_loader_1 = require("./middleware-file-loader");
+ const middlewares_1 = require("./middlewares");
+ const bodyparser_1 = require("./middlewares/bodyparser");
+ const check_permissions_1 = require("./middlewares/check-permissions");
++const request_permissions_1 = require("../policies/has-permission");
+ const ensure_publishable_api_key_1 = require("./middlewares/ensure-publishable-api-key");
+ const error_handler_1 = require("./middlewares/error-handler");
+ const routes_finder_1 = require("./routes-finder");
+@@ -51,6 +52,12 @@ class ApiLoader {
+         __classPrivateFieldSet(this, _ApiLoader_logger, container.resolve(utils_1.ContainerRegistrationKeys.LOGGER), "f");
+     }
+     async load() {
++        __classPrivateFieldGet(this, _ApiLoader_app, "f").use((req, _res, next) => {
++            if (req.method === "GET" || req.method === "HEAD") {
++                (0, request_permissions_1.initializeReadOnlyRequestPolicyCache)(req.scope);
++            }
++            next();
++        });
+         if (utils_1.FeatureFlag.isFeatureEnabled("backend_hmr")) {
+             ;
+             global.__MEDUSA_HMR_API_LOADER__ = this;
+diff --git a/dist/policies/has-permission.js b/dist/policies/has-permission.js
+index 9b5b8a9..c7d64d5 100644
+--- a/dist/policies/has-permission.js
++++ b/dist/policies/has-permission.js
+@@ -2,7 +2,14 @@
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.hasPermission = hasPermission;
+ exports.resolvePermissions = resolvePermissions;
++exports.initializeReadOnlyRequestPolicyCache = initializeReadOnlyRequestPolicyCache;
+ const utils_1 = require("@medusajs/utils");
++// Only the HTTP router enrolls GET/HEAD scopes. Root containers, jobs and
++// mutation workflows must always observe fresh permissions.
++const requestPolicyCaches = new WeakMap();
++function initializeReadOnlyRequestPolicyCache(container) {
++    requestPolicyCaches.set(container, new Map());
++}
+ /**
+  * Applies wildcard-aware matching to decide whether any of the
+  * supplied roles grants `(resource, operation)`. This is the single source of
+@@ -108,36 +115,37 @@ async function resolvePermissions(input) {
+  * Fetches a single role's policies from cache or database.
+  */
+ async function fetchSingleRolePolicies(roleId, container) {
++    const cache = requestPolicyCaches.get(container);
++    if (!cache) {
++        return readSingleRolePolicies(roleId, container);
++    }
++    if (!cache.has(roleId)) {
++        const pending = readSingleRolePolicies(roleId, container);
++        cache.set(roleId, pending);
++        pending.catch(() => {
++            if (cache.get(roleId) === pending) cache.delete(roleId);
++        });
++    }
++    return cache.get(roleId);
++}
++async function readSingleRolePolicies(roleId, container) {
+     const query = container.resolve(utils_1.ContainerRegistrationKeys.QUERY);
+-    const tags = [];
+-    return await (0, utils_1.useCache)(async () => {
+         const { data: roles } = await query.graph({
+             entity: "rbac_role",
+             fields: ["id", "policies.*"],
+             filters: { id: roleId },
+-        });
++        }, { cache: { enable: false } });
+         const role = roles[0];
+         const resourceMap = new Map();
+-        tags.push(`rbac_role:${roleId}`);
+         if (role?.policies && Array.isArray(role.policies)) {
+-            const policyIds = [];
+             for (const policy of role.policies) {
+-                policyIds.push(policy.id);
+                 if (!resourceMap.has(policy.resource)) {
+                     resourceMap.set(policy.resource, new Set());
+                 }
+                 resourceMap.get(policy.resource).add(policy.operation);
+-                tags.push(`rbac_policy:${policy.id}`);
+             }
+         }
+         return resourceMap;
+-    }, {
+-        container,
+-        key: roleId,
+-        tags,
+-        ttl: 60 * 60 * 24 * 7,
+-        providers: ["cache-memory"],
+-    });
+ }
+ /**
+  * Fetches policies for multiple roles by composing individually cached role queries.
+
+diff --git a/dist/build-tools/compiler.js b/dist/build-tools/compiler.js
+--- a/dist/build-tools/compiler.js	
++++ b/dist/build-tools/compiler.js	
+@@ -21,6 +21,10 @@
+ const promises_1 = require("fs/promises");
+ const path_1 = __importDefault(require("path"));
+ const compiler_utils_1 = require("./compiler-utils");
++const module_1 = require("node:module");
++const child_process_1 = require("node:child_process");
++const util_1 = require("node:util");
++const crypto_1 = require("node:crypto");
+ /**
+  * The compiler exposes the opinionated APIs for compiling Medusa
+  * applications and plugins. You can perform the following
+@@ -326,7 +330,7 @@
+  */
+ async function _Compiler_loadTSCompiler() {
+     if (!__classPrivateFieldGet(this, _Compiler_tsCompiler, "f")) {
+-        __classPrivateFieldSet(this, _Compiler_tsCompiler, await import("typescript"), "f");
++        __classPrivateFieldSet(this, _Compiler_tsCompiler, (0, module_1.createRequire)(path_1.default.join(__classPrivateFieldGet(this, _Compiler_projectRoot, "f"), "package.json"))("@typescript/typescript6"), "f");
+     }
+     return __classPrivateFieldGet(this, _Compiler_tsCompiler, "f");
+ }, _Compiler_copy = 
+@@ -402,6 +406,46 @@
+         const relativeFileName = path_1.default.relative(__classPrivateFieldGet(this, _Compiler_projectRoot, "f"), fileName);
+         return !(0, compiler_utils_1.isFileIgnored)(relativeFileName, chunksToIgnore);
+     });
++    const projectRoot = __classPrivateFieldGet(this, _Compiler_projectRoot, "f");
++    const projectRequire = (0, module_1.createRequire)(path_1.default.join(projectRoot, "package.json"));
++    const compilerManifestPath = projectRequire.resolve("typescript/package.json");
++    const compilerManifest = projectRequire(compilerManifestPath);
++    if (Number.parseInt(compilerManifest.version, 10) >= 7) {
++        // TS7 exposes a native CLI. Keep the legacy API only for reading config.
++        const temporaryDirectory = path_1.default.join(projectRoot, ".cache", "typescript");
++        await (0, promises_1.mkdir)(temporaryDirectory, { recursive: true });
++        const configPath = path_1.default.join(temporaryDirectory, "medusa-ts7-" + (0, crypto_1.randomUUID)() + ".json");
++        await (0, promises_1.writeFile)(configPath, JSON.stringify({
++            extends: tsConfig.options.configFilePath || path_1.default.join(projectRoot, "tsconfig.json"),
++            compilerOptions: { outDir: dist, inlineSourceMap: !tsConfig.options.sourceMap },
++            files: filesToCompile,
++            include: [],
++            exclude: [],
++        }), { flag: "wx" });
++        try {
++            const executable = path_1.default.resolve(path_1.default.dirname(compilerManifestPath), compilerManifest.bin.tsc);
++            const result = await (0, util_1.promisify)(child_process_1.execFile)(process.execPath, [executable, "--project", configPath, "--pretty", "false"], {
++                cwd: projectRoot,
++                windowsHide: true,
++                maxBuffer: 64 * 1024 * 1024,
++            });
++            if (result.stdout) process.stdout.write(result.stdout);
++            if (result.stderr) process.stderr.write(result.stderr);
++            return { emitResult: { emitSkipped: false, diagnostics: [] }, diagnostics: [] };
++        }
++        catch (error) {
++            if (typeof error.code !== "number" || ![1, 2].includes(error.code)) throw error;
++            if (error.stdout) process.stderr.write(error.stdout);
++            if (error.stderr) process.stderr.write(error.stderr);
++            return {
++                emitResult: { emitSkipped: error.code === 1, diagnostics: [] },
++                diagnostics: [{ category: ts.DiagnosticCategory.Error, code: 0, messageText: "TypeScript 7 compilation failed" }],
++            };
++        }
++        finally {
++            await (0, promises_1.unlink)(configPath);
++        }
++    }
+     /**
+      * Create emit program to compile and emit output
+      */

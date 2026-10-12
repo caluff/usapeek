@@ -21,6 +21,8 @@ import {
   readFinanceProvider,
 } from "./provider";
 import { readOrderFinance } from "./read";
+import { freezeFinalCaptureAllocation, splitFinalOrderCapture } from "../../workflows/steps/split-final-order-capture";
+import { CAPTURE_ALLOCATION_METADATA_KEY } from "./native-payments";
 
 type Current = Awaited<ReturnType<typeof readOrderFinance>>;
 type Order = Current["group"]["orders"][number];
@@ -429,6 +431,10 @@ export async function executeAuthorizationRecovery(
   const { current, prepared } = input;
   const result = structuredClone(prepared.result);
   if (result.action === "capture") {
+    const useNativeSplit = current.nativeSplit ||
+      current.group.orders[0].cart.payment_collection.metadata?.[CAPTURE_ALLOCATION_METADATA_KEY] !== undefined ||
+      current.group.orders.every((order) => !order.transactions.some((transaction) => transaction.reference === "capture"));
+    if (useNativeSplit) await freezeFinalCaptureAllocation(container, current, prepared.capture_orders);
     let captureId = prepared.capture_id;
     if (prepared.actions.includes("adopt_capture")) {
       const { result: updated } = await recordFinalCaptureWorkflow(
@@ -458,7 +464,10 @@ export async function executeAuthorizationRecovery(
       result.capture_attempted = true;
       await input.checkpoint(result);
     }
-    for (const part of prepared.capture_orders) {
+    if (useNativeSplit) await splitFinalOrderCapture(container, {
+      current, orders: prepared.capture_orders, captureId, actorId: input.actor_id, token: input.token,
+    });
+    else for (const part of prepared.capture_orders) {
       if (!prepared.missing_capture_orders.includes(part.order_id)) continue;
       await recordAllocatedRefundWorkflow(container).run({
         input: {

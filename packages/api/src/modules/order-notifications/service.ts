@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+import { REDIS_CONNECTION_OPTIONS } from "../../lib/redis-options";
 import type { Logger } from "@medusajs/framework/types";
 import { MedusaError } from "@medusajs/framework/utils";
 import type { AdminNotificationEvent } from "../../lib/admin-notifications/contracts";
@@ -41,6 +42,7 @@ export default class OrderNotificationsService {
   constructor({ logger }: { logger: Logger }, options: { redisUrl: string }) {
     this.logger = logger;
     const redisOptions = {
+      ...REDIS_CONNECTION_OPTIONS,
       lazyConnect: true,
       connectTimeout: 2_000,
       commandTimeout: 2_000,
@@ -160,6 +162,15 @@ export default class OrderNotificationsService {
 
   async publishAdminChanged(topic: AdminNotificationEvent) {
     const base = `${ADMIN_PREFIX}${topic}`;
+    if (
+      topic === "orders-changed" ||
+      topic === "stores-changed" ||
+      topic === "finance-reporting-changed"
+    ) {
+      // These topics signal live views without a cached boolean snapshot.
+      await this.publisher.publish(`${base}:events`, topic);
+      return;
+    }
     await this.publisher.eval(
       INVALIDATE,
       1,

@@ -316,8 +316,9 @@ durante el período necesario.
 Este documento no ejecuta estos checks. Se aplican cuando se escriba el código y
 se prepare la migración, usando bases de prueba aisladas.
 
-- Código: `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build`, conforme a los
-  gates del repositorio para backend y múltiples aplicaciones. `pnpm peers check`
+- Código: `pnpm lint`, `pnpm typecheck` y `pnpm build`, más las integraciones
+  pertinentes conforme a la [guía de pruebas aisladas](../../packages/api/integration-tests/http/README.md)
+  y los gates del repositorio para backend y múltiples aplicaciones. `pnpm peers check`
   si cambian dependencias. No ejecutar suites que reconstruyen bases contra la
   base compartida o productiva.
 - Base: restauración completa; comparación de filas/relaciones y secuencias;

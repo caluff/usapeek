@@ -210,7 +210,7 @@ export async function recoverOrderFinance(
               container,
             ).run({
               input: {
-                payment_id: payment.id,
+                payment_id: current.refundPaymentId ?? payment.id,
                 amount,
                 created_by: input.actor_id,
                 note: value.note,

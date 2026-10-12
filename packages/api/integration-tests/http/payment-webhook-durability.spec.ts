@@ -20,7 +20,8 @@ import {
   Modules,
   PaymentActions,
 } from "@medusajs/framework/utils";
-import Stripe from "stripe";
+import type Stripe from "stripe";
+import { createStripeClient } from "../../src/lib/stripe-client";
 import { readOrderFinance } from "../../src/lib/order-finance/read";
 import { financeAmount } from "../../src/lib/order-finance/policy";
 import { FINAL_CAPTURE_OPERATION_METADATA } from "../../src/modules/stripe-allocated-payment/service";
@@ -70,7 +71,7 @@ if (!enabled) {
   process.env.MEDUSA_DISABLE_TELEMETRY = "true";
   process.env.MEDUSA_WORKER_MODE = "shared";
   let simulated = installFinanceDurabilityStripe();
-  const stripe = new Stripe(apiKey, { maxNetworkRetries: 0 });
+  const stripe = createStripeClient(apiKey, { maxNetworkRetries: 0 });
   jest.setTimeout(120_000);
 
   medusaIntegrationTestRunner({

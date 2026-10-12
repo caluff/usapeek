@@ -1,5 +1,5 @@
 import { MathBN, MedusaError } from "@medusajs/framework/utils";
-import Stripe from "stripe";
+import { createStripeClient } from "../stripe-client";
 import { getStripeConnectConfiguration } from "../stripe-connect-configuration";
 import { readStripeFactPages } from "./provider-facts";
 
@@ -15,7 +15,7 @@ export function financeStripeClient() {
       MedusaError.Types.NOT_ALLOWED,
       "Las liquidaciones automáticas deben permanecer desactivadas hasta completar la conciliación de reembolsos.",
     );
-  return new Stripe(configuration.apiKey);
+  return createStripeClient(configuration.apiKey);
 }
 
 export async function readFinanceProvider(paymentIntentId: string) {

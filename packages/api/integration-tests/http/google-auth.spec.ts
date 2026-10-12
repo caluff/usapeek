@@ -12,6 +12,7 @@ import { medusaIntegrationTestRunner } from "@medusajs/test-utils";
 import { createCustomerAccountWorkflow, createRbacRolesWorkflow, createUserAccountWorkflow } from "@medusajs/core-flows";
 import type { IAuthModuleService } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys, generateJwtToken, Modules } from "@medusajs/framework/utils";
+import { z } from "@medusajs/framework/zod";
 import { createSellerAccountWorkflow } from "@mercurjs/core/workflows";
 import type SellerModule from "@mercurjs/core/modules/seller";
 import { MercurModules } from "@mercurjs/types";
@@ -95,8 +96,8 @@ if (process.env.GOOGLE_AUTH_TESTS !== "disposable-local") {
       async function panelRoles(actorType: "user" | "member", actorId: string) {
         const query = getContainer().resolve(ContainerRegistrationKeys.QUERY);
         if (actorType === "user") {
-          const { data } = await query.graph({ entity: "user", fields: ["id", "rbac_roles.id"], filters: { id: actorId } }, { cache: { enable: false } });
-          return data[0]?.rbac_roles ?? [];
+          const { data }: { data: unknown } = await query.graph({ entity: "user_rbac_role", fields: ["rbac_role_id"], filters: { user_id: actorId } }, { cache: { enable: false } });
+          return z.array(z.object({ rbac_role_id: z.string().min(1) })).parse(data).map(link => ({ id: link.rbac_role_id }));
         }
         const members = await nativeSeller().listSellerMembers({ member_id: actorId });
         return members.map(member => ({ id: member.id, seller_id: member.seller_id, member_id: member.member_id, role_id: member.role_id, is_owner: member.is_owner }));

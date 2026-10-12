@@ -146,13 +146,13 @@ const observationInputSchema = z.object({
 export type ProviderFactsInput = z.input<typeof observationInputSchema>;
 
 export type StripeFinanceReader = {
-  accounts: Pick<Stripe.AccountsResource, "retrieve">;
-  balance: Pick<Stripe.BalanceResource, "retrieve">;
-  charges: Pick<Stripe.ChargesResource, "retrieve">;
-  refunds: Pick<Stripe.RefundsResource, "list">;
-  transfers: Pick<Stripe.TransfersResource, "list" | "listReversals">;
-  events: Pick<Stripe.EventsResource, "list">;
-  balanceTransactions: Pick<Stripe.BalanceTransactionsResource, "retrieve">;
+  accounts: Pick<Stripe["accounts"], "retrieveCurrent">;
+  balance: Pick<Stripe["balance"], "retrieve">;
+  charges: Pick<Stripe["charges"], "retrieve">;
+  refunds: Pick<Stripe["refunds"], "list">;
+  transfers: Pick<Stripe["transfers"], "list" | "listReversals">;
+  events: Pick<Stripe["events"], "list">;
+  balanceTransactions: Pick<Stripe["balanceTransactions"], "retrieve">;
 };
 
 export const providerFactCoverageSchema = z.object({
@@ -295,7 +295,7 @@ export async function observeStripeFinanceFacts(
       "Duplicate order scope",
     );
   const [account, balance] = await Promise.all([
-    stripe.accounts.retrieve(),
+    stripe.accounts.retrieveCurrent(),
     stripe.balance.retrieve(),
   ]);
   if (account.id !== input.account_id || balance.livemode !== false)

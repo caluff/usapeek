@@ -1,9 +1,9 @@
 # HTTP integration tests
 
-Suites use installed `@medusajs/test-utils` 2.18.0 and real Medusa wiring.
-`pnpm test` and `pnpm test:api` run unit tests only. Use the closest affected
-unit file, or the `test:unit:catalog` and `test:unit:finance` groups, for focused
-changes. Unit tests use local fixtures and mocked providers.
+Suites use installed `@medusajs/test-utils` 2.21.2 and real Medusa wiring.
+Unit tests and their runners were removed at the user's request. There is no
+general `pnpm test` or `pnpm test:api` command. The HTTP and module integration
+suites below remain available through their explicit runners.
 
 Module and HTTP integration tests are explicit checks for the affected
 persistence, API, authorization or workflow behavior. They require isolated

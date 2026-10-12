@@ -30,7 +30,6 @@ export const STATUS_LABELS: Record<ApplicationStatus, string> = {
 export type ApplicationNavigation = {
   label: string
   unreadCount: number
-  pendingKey?: string
 }
 
 export function applicationNavigation(
@@ -50,14 +49,6 @@ export function applicationNavigation(
               ? "Ver solicitud"
               : "Vender en usapeek",
     unreadCount: response?.unread_count ?? 0,
-    ...(application &&
-    !response?.applicant.existing_vendor_access &&
-    (application.status === "draft" ||
-      application.status === "changes_requested")
-      ? {
-          pendingKey: `${application.id}:${application.status}:${application.submission_revision}`,
-        }
-      : {}),
   }
 }
 

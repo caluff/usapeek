@@ -176,7 +176,7 @@ async function inspectPayout(
   );
   const stripe = financeStripeClient();
   const [platform, balance, provider, transfers] = await Promise.all([
-    stripe.accounts.retrieve(),
+    stripe.accounts.retrieveCurrent(),
     stripe.balance.retrieve(),
     readFinanceProvider(payment.data.id),
     readOrderTransfers(stripe, {

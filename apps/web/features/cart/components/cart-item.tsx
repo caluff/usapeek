@@ -12,6 +12,7 @@ import {
 import { getProductImage } from "@/features/catalog/image"
 import type { StorefrontOffer } from "@/features/catalog/offers"
 import { cartItemAvailability, formatMoney } from "../presentation"
+import { getCartItemVariantDescription } from "../variant-description"
 import { CartItemQuantity } from "./cart-item-quantity"
 
 type CartLineItemWithOffer = HttpTypes.StoreCartLineItem & {
@@ -88,15 +89,7 @@ export function CartItem({
       item.variant?.product?.thumbnail ??
       item.variant?.product?.images?.[0]?.url,
   )
-  const optionValues = item.variant?.options
-    ?.map((option) => option.value.trim())
-    .filter((value) => value && !/^_*default_*$/i.test(value))
-  const variantTitle = item.variant_title?.trim()
-  const variant =
-    optionValues?.join(" / ") ||
-    (variantTitle && !/^(default variant|_*default_*)$/i.test(variantTitle)
-      ? variantTitle
-      : null)
+  const variant = getCartItemVariantDescription(item)
   const seller = item.offer?.seller
   const sellerName = seller?.name ?? "Tienda del marketplace"
   const sellerLogo = getProductImage(seller?.logo)

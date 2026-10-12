@@ -1,18 +1,16 @@
-const ts = require("typescript");
-const fs = require("node:fs");
+const ts = require("@typescript/typescript6");
 const path = require("node:path");
+const {
+  createContractProgram,
+  writeOrCheckContract,
+} = require("./contract-generation.cjs");
+
 const source = path.resolve(
   __dirname,
   "../src/api/store/products/search/contracts.ts",
 );
 const target = path.resolve(__dirname, "../.mercur/search-contracts.d.ts");
-const program = ts.createProgram([source], {
-  strict: true,
-  skipLibCheck: true,
-  target: ts.ScriptTarget.ES2021,
-  module: ts.ModuleKind.Node16,
-  moduleResolution: ts.ModuleResolutionKind.Node16,
-});
+const program = createContractProgram([source]);
 const checker = program.getTypeChecker();
 const file = program.getSourceFile(source);
 const exportsList = checker.getExportsOfModule(
@@ -40,12 +38,9 @@ const result =
   ";\n" +
   declarations +
   "\n";
-if (process.argv.includes("--check")) {
-  if (!fs.existsSync(target) || fs.readFileSync(target, "utf8").replaceAll("\r\n", "\n") !== result)
-    throw new Error(
-      "Search contracts are stale; run pnpm search:contracts:generate",
-    );
-} else {
-  fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, result);
-}
+
+writeOrCheckContract(
+  target,
+  result,
+  "Search contracts are stale; run pnpm search:contracts:generate",
+);

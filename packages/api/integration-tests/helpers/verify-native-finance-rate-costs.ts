@@ -660,7 +660,7 @@ async function inspectCosts(
 ) {
   progress("provider_account");
   const stripe = financeStripeClient();
-  const platform = await stripe.accounts.retrieve();
+  const platform = await stripe.accounts.retrieveCurrent();
   const comparisons: Array<
     { group_id: string } & ReturnType<typeof contrastNativeProviderCosts>
   > = [];

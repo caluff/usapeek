@@ -5,8 +5,8 @@ import { cache, Suspense } from "react";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FavoriteButton } from "@/features/account/components/favorite-button";
-import { getFavoriteProductIds } from "@/features/account/favorites";
+import { ProductFavoriteAction } from "@/features/account/components/product-favorite-action";
+import { groupOffersByProduct } from "@/features/catalog/offers";
 import { getCurrentCustomer } from "@/lib/auth-sdk";
 import { getSearchResults } from "../data";
 import {
@@ -24,18 +24,6 @@ import {
 } from "./search-filters";
 
 const getSearchCustomer = cache(getCurrentCustomer);
-
-async function SearchFavorite({ productId }: { productId: string }) {
-  const customer = await getSearchCustomer();
-  return (
-    <FavoriteButton
-      productId={productId}
-      saved={getFavoriteProductIds(customer?.metadata).includes(productId)}
-      authenticated={Boolean(customer)}
-      compact
-    />
-  );
-}
 
 export function SearchResultsSkeleton() {
   return (
@@ -156,6 +144,7 @@ async function ResolvedSearchResults({
   }
   const { result, offers } = data;
   const pagination = getSearchPagination(parameters, result.nbPages);
+  const offersByProduct = groupOffersByProduct(offers);
   const filters = {
     parameters,
     facets: result.facets,
@@ -206,20 +195,12 @@ async function ResolvedSearchResults({
                 <ProductCard
                   key={product.id}
                   product={product}
-                  offers={offers.filter(
-                    (offer) => offer.product_id === product.id,
-                  )}
+                  offers={offersByProduct.get(product.id)}
                   favoriteAction={
-                    <Suspense
-                      fallback={
-                        <Skeleton
-                          className="size-11"
-                          aria-label="Cargando favorito"
-                        />
-                      }
-                    >
-                      <SearchFavorite productId={product.id} />
-                    </Suspense>
+                    <ProductFavoriteAction
+                      customer={getSearchCustomer()}
+                      productId={product.id}
+                    />
                   }
                 />
               ))}

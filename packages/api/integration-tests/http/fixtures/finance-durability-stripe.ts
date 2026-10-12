@@ -67,6 +67,7 @@ export function installFinanceDurabilityStripe() {
     hideRefunds: false,
     hideReversals: false,
     expectedRefundAmount: 2_000,
+    expectedCaptureAmount: 10_000,
     expectedReversalAmount: 1_840,
   };
   const charge = () => ({
@@ -129,13 +130,13 @@ export function installFinanceDurabilityStripe() {
     ) {
       if (
         body.has("amount_to_capture") &&
-        Number(body.get("amount_to_capture")) !== 10_000
+        Number(body.get("amount_to_capture")) !== state.expectedCaptureAmount
       )
         throw new Error("Unexpected simulated final capture amount");
       state.captureCalls++;
       intent.metadata = { ...intent.metadata, ...metadata(body) };
       intent.status = "succeeded";
-      intent.amount_received = 10_000;
+      intent.amount_received = state.expectedCaptureAmount;
       intent.amount_capturable = 0;
       return ok(intent);
     }

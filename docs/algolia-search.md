@@ -59,11 +59,9 @@ pnpm --filter @usapeek/api search:contracts:generate
 pnpm --filter @usapeek/api search:contracts:check
 pnpm lint:web
 pnpm typecheck:web
-pnpm test:web
 pnpm build:web
 pnpm lint:api
 pnpm typecheck:api
-pnpm test:api
 pnpm build:api
 pnpm peers check
 ```

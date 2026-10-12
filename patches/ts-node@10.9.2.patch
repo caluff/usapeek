@@ -1,0 +1,15 @@
+diff --git a/dist/configuration.js b/dist/configuration.js
+--- a/dist/configuration.js
++++ b/dist/configuration.js
+@@ -230,6 +230,10 @@ exports.resolveAndLoadCompiler = resolveAndLoadCompiler;
+ function resolveCompiler(name, relativeToPath) {
+     const projectLocalResolveHelper = (0, util_1.createProjectLocalResolveHelper)(relativeToPath);
+-    const compiler = projectLocalResolveHelper(name || 'typescript', true);
++    // The default compiler needs the legacy JS API from ts-node's own dependency.
++    // Explicit caller, environment and tsconfig compiler choices stay project-local.
++    const compiler = name
++        ? projectLocalResolveHelper(name, true)
++        : require.resolve('typescript');
+     return { compiler };
+ }
+ /** @internal */

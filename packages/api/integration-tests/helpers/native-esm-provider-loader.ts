@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { SourceTextModule, SyntheticModule } from "node:vm";
 import type { ConfigModule } from "@medusajs/framework/config";
 import type { ModuleProviderExports } from "@medusajs/framework/types";
 import * as medusaUtils from "@medusajs/framework/utils";
 import * as mercurTypes from "@mercurjs/types";
 import type { IPayoutProvider } from "@mercurjs/types";
-import Stripe from "stripe";
 
 const PROVIDER = "@mercurjs/payout-stripe-connect";
 
@@ -13,7 +13,7 @@ function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Jest 29 cannot require ESM through Medusa 2.18's require-based dynamicImport.
+/** Jest cannot require this ESM provider through Medusa's dynamicImport.
  * Evaluate the installed provider unchanged, linking only its real dependencies.
  * Call after the suite's string-path/credential guards in beforeServerStart,
  * which the native integration runner invokes before migration bootstrap.
@@ -49,6 +49,8 @@ export async function useNativeEsmPayoutProvider(
     );
   }
   const providerPath = require.resolve(PROVIDER);
+  // Use the provider's own SDK version, matching Node's production resolution.
+  const nativeStripe: unknown = createRequire(providerPath)("stripe");
   const module = new SourceTextModule(readFileSync(providerPath, "utf8"), {
     identifier: providerPath,
   });
@@ -59,7 +61,7 @@ export async function useNativeEsmPayoutProvider(
         : specifier === "@mercurjs/types"
           ? mercurTypes
           : specifier === "stripe"
-            ? { default: Stripe }
+            ? { default: nativeStripe }
             : (() => {
                 throw new Error(
                   `Unexpected native ESM provider dependency: ${specifier}`,

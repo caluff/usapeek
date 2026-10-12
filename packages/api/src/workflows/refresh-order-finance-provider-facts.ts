@@ -235,7 +235,9 @@ function observationReader(): NonNullable<
     paymentIntents: {
       retrieve: stripe.paymentIntents.retrieve.bind(stripe.paymentIntents),
     },
-    accounts: { retrieve: stripe.accounts.retrieve.bind(stripe.accounts) },
+    accounts: {
+      retrieveCurrent: stripe.accounts.retrieveCurrent.bind(stripe.accounts),
+    },
     balance: { retrieve: stripe.balance.retrieve.bind(stripe.balance) },
     charges: { retrieve: stripe.charges.retrieve.bind(stripe.charges) },
     refunds: { list: stripe.refunds.list.bind(stripe.refunds) },

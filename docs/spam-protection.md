@@ -44,9 +44,9 @@ ni credenciales de proveedores externos.
 
 ## Verificación
 
-Las pruebas unitarias de `src/lib/spam-protection/__tests__` cubren la política,
-los rechazos y la indisponibilidad de Redis. `pnpm --filter @usapeek/web test:auth`
-comprueba el campo trampa y que las server actions no llamen al SDK al detectarlo.
+Las pruebas unitarias de la política y de las server actions se retiraron por
+solicitud del usuario. La integración descrita a continuación conserva su propio
+alcance; no acredita el comportamiento del campo trampa en el frontend.
 
 La suite `integration-tests/http/spam-protection.spec.ts` requiere el importador
 local desechable descrito en las guías de integración del proyecto. Se habilita

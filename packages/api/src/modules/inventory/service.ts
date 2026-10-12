@@ -1,9 +1,9 @@
 import type { Context, InventoryLevelDTO } from "@medusajs/framework/types";
 import { EmitEvents, InjectManager, InjectTransactionManager, MathBN, MedusaContext, MedusaError } from "@medusajs/framework/utils";
-import { InventoryModuleService as NativeInventoryModuleService } from "@medusajs/inventory/dist/services";
+import nativeInventoryModule from "@medusajs/medusa/inventory";
 import type { VendorInventoryAdjustment } from "../../lib/inventory/validation";
 
-export default class InventoryModuleService extends NativeInventoryModuleService {
+export default class InventoryModuleService extends nativeInventoryModule.service {
   @InjectManager()
   @EmitEvents()
   async compareAndSetInventory(input: VendorInventoryAdjustment, @MedusaContext() context: Context = {}): Promise<InventoryLevelDTO> {

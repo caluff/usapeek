@@ -34,9 +34,11 @@ constraint. External SQL writers and additional code that bypasses native
 services are outside this contract. Multi-operation callers that manually retain
 transactions must use consistent resource order, as with any row-locking API.
 
-The package exposes the required native model/repository classes through its
-`dist` subpaths, with no equivalent framework exports. These imports trigger the
-Medusa internal-import lint warning and require review when upgrading Medusa.
+The native module service is the typed `service` property on the public
+`@medusajs/medusa/inventory` default export. The package exposes the required native models,
+repository and internal inventory-level service only through its `dist` subpaths,
+with no equivalent framework exports. Those imports trigger the Medusa
+internal-import lint warning and require review when upgrading Medusa.
 Keep `@medusajs/inventory` pinned to the same version as the framework.
 
 Historical unit verification (the unit suites were removed at the user's request):

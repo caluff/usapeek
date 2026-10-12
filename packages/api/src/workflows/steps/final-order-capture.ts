@@ -13,9 +13,9 @@ import {
 } from "../../lib/order-finance/provider";
 import type { readOrderFinance } from "../../lib/order-finance/read";
 import {
-  recordAllocatedRefundWorkflow,
   recordFinalCaptureWorkflow,
 } from "../order-finance-native";
+import { freezeFinalCaptureAllocation, splitFinalOrderCapture } from "./split-final-order-capture";
 
 // Called only by the owning finance step after its durable operation is committed.
 export async function performFinalOrderCapture(
@@ -50,6 +50,7 @@ export async function performFinalOrderCapture(
       "El reparto congelado no conserva el importe de captura.",
     );
   }
+  await freezeFinalCaptureAllocation(container, current, orders);
   const stripe = financeStripeClient();
   const intent = await stripe.paymentIntents.capture(
     payment.data.id,
@@ -154,18 +155,7 @@ export async function performFinalOrderCapture(
     released_refund_ids: evidence.released_refund_ids,
     orders: evidence.orders,
   };
-  for (const part of capture.orders) {
-    if (!financeAmount(part.amount)) continue;
-    await recordAllocatedRefundWorkflow(container).run({
-      input: {
-        order_id: part.order_id,
-        amount: financeAmount(part.amount),
-        currency_code: "usd",
-        reference: "capture",
-        reference_id: capture.capture_id,
-      },
-    });
-  }
+  await splitFinalOrderCapture(container, { current, orders, captureId: capture.capture_id, actorId: input.actorId, token });
   await current.journal.observeGroup(
     current.group.id,
     token,

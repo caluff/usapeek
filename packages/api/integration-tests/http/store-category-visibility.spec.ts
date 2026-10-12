@@ -379,6 +379,7 @@ if (!enabled) {
             input: {
               policies: [
                 {
+                  key: `product_category:${PolicyOperation.read}`,
                   resource: "product_category",
                   operation: PolicyOperation.read,
                 },

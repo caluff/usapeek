@@ -262,6 +262,7 @@ if (!enabled) {
           ).run({
             input: {
               policies: missing.map((operation) => ({
+                key: `commission_rate:${operation}`,
                 resource: "commission_rate",
                 operation,
               })),

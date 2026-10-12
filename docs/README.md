@@ -53,7 +53,7 @@ Las guías describen el código actual y señalan sus límites conocidos. Sus
 instrucciones de configuración no demuestran el estado remoto de ningún entorno.
 La auditoría conserva las prioridades y requisitos originales; para conocer su
 resolución, las extensiones autorizadas y las verificaciones pendientes prevalece
-el progreso con su evidencia. La limpieza del 2026-10-03 retiró los tests unitarios
+el progreso con su evidencia. La limpieza del 2026-10-12 retiró los tests unitarios
 y preservó las integraciones; no interpretar los comandos de informes anteriores
 como el inventario actual de pruebas.
 

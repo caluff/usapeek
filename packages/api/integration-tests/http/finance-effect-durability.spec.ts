@@ -7,6 +7,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
+import { setTimeout as delay } from "node:timers/promises";
 import { medusaIntegrationTestRunner } from "@medusajs/test-utils";
 import {
   createApiKeysWorkflow,
@@ -16,14 +17,17 @@ import {
 } from "@medusajs/core-flows";
 import type {
   IAuthModuleService,
+  IEventBusModuleService,
   IInventoryService,
   IOrderModuleService,
+  IPaymentModuleService,
 } from "@medusajs/framework/types";
 import {
   ContainerRegistrationKeys,
   generateJwtToken,
   MathBN,
   Modules,
+  PaymentEvents,
 } from "@medusajs/framework/utils";
 import { z } from "@medusajs/framework/zod";
 import { COMMERCE_AUTOMATION_MODULE } from "../../src/modules/commerce-automation";
@@ -42,6 +46,7 @@ import type RbacModule from "@medusajs/medusa/rbac";
 import {
   approveSellerWorkflow,
   createSellerDefaultRolesStep,
+  splitCapturedCartPaymentWorkflow,
 } from "@mercurjs/core/workflows";
 import {
   createWorkflow,
@@ -61,6 +66,7 @@ import { installFinanceDurabilityStripe } from "./fixtures/finance-durability-st
 import { assertNativeFinanceRedis } from "../helpers/native-finance-redis-guard";
 import { useNativeEsmPayoutProvider } from "../helpers/native-esm-provider-loader";
 import { configureNativeFinanceDatabaseTls } from "../helpers/native-finance-database-tls";
+import { cancelOrderFulfillmentWorkflow } from "@mercurjs/core/workflows/order/workflows/cancel-order-fulfillment";
 
 const enabled =
   process.env.FINANCE_EFFECT_DURABILITY_TESTS === "disposable-local";
@@ -225,7 +231,27 @@ if (!enabled) {
         actorId: string,
         actorType: "customer" | "user",
       ) {
-        const metadata = { [`${actorType}_id`]: actorId };
+        const { data: roleLinks }: { data: unknown } =
+          actorType === "user"
+            ? await getContainer()
+                .resolve(ContainerRegistrationKeys.QUERY)
+                .graph(
+                  {
+                    entity: "user_rbac_role",
+                    fields: ["rbac_role_id"],
+                    filters: { user_id: actorId },
+                  },
+                  { cache: { enable: false } },
+                )
+            : { data: [] };
+        const roles = z
+          .array(z.object({ rbac_role_id: z.string().min(1) }))
+          .parse(roleLinks)
+          .map((link) => link.rbac_role_id);
+        const metadata = {
+          [`${actorType}_id`]: actorId,
+          ...(actorType === "user" ? { roles } : {}),
+        };
         const identity = await getContainer()
           .resolve<IAuthModuleService>(Modules.AUTH)
           .createAuthIdentities({
@@ -592,6 +618,37 @@ if (!enabled) {
         };
       }
 
+      async function drainNativeEvents() {
+        const eventBus = getContainer().resolve(
+          Modules.EVENT_BUS,
+        ) as unknown as {
+          queue_: {
+            getJobCounts(...states: string[]): Promise<Record<string, number>>;
+          };
+        };
+        let idle = 0;
+        for (let attempt = 0; attempt < 120; attempt++) {
+          const counts = await eventBus.queue_.getJobCounts(
+            "active",
+            "waiting",
+            "delayed",
+            "prioritized",
+            "failed",
+          );
+          expect(counts.failed).toBe(0);
+          idle = ["active", "waiting", "delayed", "prioritized"].every(
+            (state) => counts[state] === 0,
+          )
+            ? idle + 1
+            : 0;
+          if (idle >= 3) return;
+          await delay(250);
+        }
+        throw new Error(
+          "Native subscribers did not finish before database restoration.",
+        );
+      }
+
       beforeEach(async () => {
         stripe.restore();
         stripe = installFinanceDurabilityStripe();
@@ -600,7 +657,8 @@ if (!enabled) {
         );
         expect(result.rows).toEqual([{ ssl: true }]);
       });
-      afterEach(() => {
+      afterEach(async () => {
+        await drainNativeEvents();
         // No unexpected endpoint may be swallowed by a provider-fact read.
         expect(stripe.rejected).toEqual([]);
       });
@@ -1665,33 +1723,7 @@ if (!enabled) {
           before.group.orders.every((order) => order.fulfillments.length > 0),
         ).toBe(true);
         expect(before.operations).toEqual([]);
-        const auth = getContainer().resolve<IAuthModuleService>(Modules.AUTH);
-        const identity = await auth.createAuthIdentities({
-          app_metadata: { user_id: value.actorId },
-          provider_identities: [
-            {
-              provider: "emailpass",
-              entity_id: `finance-expired-${randomUUID()}@example.invalid`,
-            },
-          ],
-        });
-        const { http } = getContainer().resolve(
-          ContainerRegistrationKeys.CONFIG_MODULE,
-        ).projectConfig;
-        const token = generateJwtToken(
-          {
-            actor_id: value.actorId,
-            actor_type: "user",
-            auth_identity_id: identity.id,
-            auth_provider: "emailpass",
-            app_metadata: { user_id: value.actorId },
-          },
-          {
-            secret: http.jwtSecret,
-            expiresIn: "10m",
-            jwtOptions: http.jwtOptions,
-          },
-        );
+        const token = await actorToken(value.actorId, "user");
 
         // This models Stripe's observed expiration outcome, not elapsed real
         // authorization time. A fake clock alone cannot exercise this guard.
@@ -1760,8 +1792,342 @@ if (!enabled) {
         expect(payouts.rows).toEqual([]);
       });
 
+      it("native split compatibility captures once, refunds the owning payment, and recovers a lost response", async () => {
+        const value = await createFinanceDurabilityFixture(getContainer(), {
+          paymentState: "authorized",
+        });
+        await operateOrderFinanceWorkflow(getContainer()).run({
+          input: {
+            ...input(value),
+            action: "capture",
+            amount: undefined,
+          },
+        });
+        const captured = await read(value);
+        expect(captured.nativeSplit).toBe(true);
+        expect(captured.financialProblem).toBeNull();
+        expect(captured.refundPaymentId).not.toBe(value.paymentId);
+        expect(captured.view.finance).toMatchObject({
+          captured_total: 70,
+          refundable_total: 70,
+        });
+        const sibling = await read(value, value.siblingOrderId);
+        expect(sibling.refundPaymentId).not.toBe(captured.refundPaymentId);
+        expect(sibling.view.finance).toMatchObject({
+          captured_total: 30,
+          refunded_total: 0,
+        });
+        const query = getContainer().resolve(ContainerRegistrationKeys.QUERY);
+        const {
+          data: [ownPayment],
+        } = await query.graph(
+          {
+            entity: "payment",
+            fields: ["id", "payment_collection.id"],
+            filters: { id: captured.refundPaymentId! },
+          },
+          { cache: { enable: false } },
+        );
+        const headers = {
+          authorization: `Bearer ${await actorToken(value.actorId, "user")}`,
+        };
+        const rejectNativeWrites = async () => {
+          const effects = stripe.requests.filter(
+            (row) => row.method === "POST",
+          ).length;
+          for (const path of [
+            `/admin/payments/${captured.refundPaymentId}/refund`,
+            `/admin/payments/${captured.refundPaymentId}/capture`,
+            `/admin/payment-collections/${ownPayment.payment_collection.id}/mark-as-paid`,
+          ]) {
+            const response = await api.post(
+              path,
+              { amount: 1 },
+              { headers, validateStatus: () => true },
+            );
+            expect(response.status).toBe(400);
+            expect(response.data).toMatchObject({
+              type: "not_allowed",
+              message: path.endsWith("/capture")
+                ? "Utiliza el panel financiero del pedido; esta ruta no permite el cobro compartido ni omitir una conciliación pendiente."
+                : "Utiliza Cancelaciones y reembolsos desde el detalle del pedido para aplicar el importe de esta tienda.",
+            });
+          }
+          expect(
+            stripe.requests.filter((row) => row.method === "POST"),
+          ).toHaveLength(effects);
+        };
+        await rejectNativeWrites();
+        stripe.state.loseRefundResponse = true;
+        const request = input(value);
+        await expect(operate(request)).rejects.toMatchObject({
+          message: expect.any(String),
+        });
+        await rejectNativeWrites();
+        stripe.state.loseRefundResponse = false;
+        await recover(request);
+        expect((await read(value)).view.finance).toMatchObject({
+          captured_total: 70,
+          refunded_total: 20,
+          refundable_total: 50,
+        });
+        expect(
+          (await read(value, value.siblingOrderId)).view.finance.refunded_total,
+        ).toBe(0);
+        expect(stripe.state).toMatchObject({
+          captureCalls: 1,
+          refundCreates: 1,
+        });
+        const { data: payments } = await query.graph(
+          {
+            entity: "payment",
+            fields: ["id", "refunds.id"],
+            filters: { id: [value.paymentId, captured.refundPaymentId!] },
+          },
+          { cache: { enable: false } },
+        );
+        expect(
+          payments.find((payment) => payment.id === value.paymentId)?.refunds,
+        ).toEqual([]);
+        expect(
+          payments.find((payment) => payment.id === captured.refundPaymentId)
+            ?.refunds,
+        ).toHaveLength(1);
+        for (const fulfillment of (await read(value)).group.orders.find(
+          (order) => order.id === value.orderId,
+        )!.fulfillments) {
+          if (!fulfillment.canceled_at)
+            await cancelOrderFulfillmentWorkflow(getContainer()).run({
+              input: {
+                order_id: value.orderId,
+                fulfillment_id: fulfillment.id,
+                canceled_by: value.actorId,
+              },
+            });
+        }
+        stripe.state.expectedRefundAmount = 5_000;
+        await operateOrderFinanceWorkflow(getContainer()).run({
+          input: {
+            ...input(value),
+            action: "cancel",
+            amount: undefined,
+          },
+        });
+        expect((await read(value)).view.finance).toMatchObject({
+          captured_total: 70,
+          refunded_total: 70,
+          refundable_total: 0,
+        });
+        expect(stripe.state).toMatchObject({
+          captureCalls: 1,
+          refundCreates: 2,
+        });
+        expect(
+          (await read(value, value.siblingOrderId)).view.finance.refunded_total,
+        ).toBe(0);
+      });
+
+      it("native split compatibility recovers the persisted boundary before transactions and completion flag without another provider capture", async () => {
+        const value = await createFinanceDurabilityFixture(getContainer(), {
+          paymentState: "authorized",
+        });
+        const request = {
+          ...input(value),
+          action: "capture" as const,
+          amount: undefined,
+        };
+        const service = journal();
+        const observe = service.observeGroup.bind(service);
+        const failure = jest
+          .spyOn(service, "observeGroup")
+          .mockImplementation(async (...args) => {
+            if (args[2].finance_final_capture !== undefined)
+              throw new Error("Injected final capture journal failure");
+            return observe(...args);
+          });
+        try {
+          await expect(
+            operateOrderFinanceWorkflow(getContainer()).run({ input: request }),
+          ).rejects.toMatchObject({ message: expect.any(String) });
+        } finally {
+          failure.mockRestore();
+        }
+        await drainNativeEvents();
+        const captured = await read(value);
+        const paymentModule = getContainer().resolve<IPaymentModuleService>(
+          Modules.PAYMENT,
+        );
+        const orderModule = getContainer().resolve<IOrderModuleService>(
+          Modules.ORDER,
+        );
+        const ownPaymentIds = [
+          captured.refundPaymentId!,
+          (await read(value, value.siblingOrderId)).refundPaymentId!,
+        ];
+        const ownCaptures = await paymentModule.listPayments(
+          { id: ownPaymentIds },
+          { relations: ["captures"] },
+        );
+        expect(ownCaptures).toHaveLength(2);
+        expect(
+          ownCaptures.every((payment) => payment.captures?.length === 1),
+        ).toBe(true);
+        // Fixture-only native writes restore the exact persisted split boundary:
+        // captures exist, but order transactions and the final flag do not.
+        const transactions = await orderModule.listOrderTransactions({
+          order_id: [value.orderId, value.siblingOrderId],
+          reference: "capture",
+        });
+        expect(transactions).toHaveLength(2);
+        await orderModule.deleteOrderTransactions(
+          transactions.map((transaction) => transaction.id),
+        );
+        const collection = captured.group.orders[0].cart.payment_collection;
+        await paymentModule.updatePaymentCollections(collection.id, {
+          metadata: { ...collection.metadata, split_order_collections: false },
+        });
+        const interrupted = await read(value);
+        expect(interrupted.nativeSplit).toBe(true);
+        expect(interrupted.financialProblem).toEqual(expect.any(String));
+        expect(interrupted.view.finance.refund.allowed).toBe(false);
+        const recovery = {
+          order_id: value.orderId,
+          actor_id: value.actorId,
+          operation_id: `capture:${value.orderId}:${request.request_id}`,
+          reason:
+            "Restore recorded native captures after the interrupted split",
+        };
+        const inspected = await inspectFinanceRecovery(
+          getContainer(),
+          recovery,
+        );
+        expect(inspected.plan.actions).toContain("record_capture_transaction");
+        const { result } = await recoverOrderFinanceWorkflow(
+          getContainer(),
+        ).run({
+          input: {
+            ...recovery,
+            plan_hash: inspected.plan_hash,
+            release_stopped_writer: false,
+          },
+        });
+        expect(result).toMatchObject({
+          state: "complete",
+          fence_released: true,
+        });
+        const recovered = await read(value);
+        expect(recovered.financialProblem).toBeNull();
+        expect(recovered.view.finance).toMatchObject({
+          captured_total: 70,
+          refunded_total: 0,
+        });
+        expect(
+          (await read(value, value.siblingOrderId)).view.finance,
+        ).toMatchObject({ captured_total: 30, refunded_total: 0 });
+        expect(
+          (
+            await paymentModule.listPayments(
+              { id: ownPaymentIds },
+              { relations: ["captures"] },
+            )
+          ).map((payment) => payment.captures?.map((capture) => capture.id)),
+        ).toEqual(
+          ownCaptures.map((payment) =>
+            payment.captures?.map((capture) => capture.id),
+          ),
+        );
+        const posts = stripe.requests.filter(
+          (row) => row.method === "POST",
+        ).length;
+        await splitCapturedCartPaymentWorkflow(getContainer()).run({
+          input: { cart_id: value.cartId },
+        });
+        await operateOrderFinanceWorkflow(getContainer()).run({
+          input: request,
+        });
+        expect(
+          stripe.requests.filter((row) => row.method === "POST"),
+        ).toHaveLength(posts);
+        expect(stripe.state).toMatchObject({
+          captureCalls: 1,
+          refundCreates: 0,
+        });
+      });
+
+      it("native split compatibility preserves the reduced final capture after pre-capture cancellation", async () => {
+        stripe.state.expectedCaptureAmount = 3_000;
+        const value = await createFinanceDurabilityFixture(getContainer(), {
+          paymentState: "authorized",
+        });
+        const current = await read(value);
+        for (const fulfillment of current.group.orders.find(
+          (order) => order.id === value.orderId,
+        )!.fulfillments) {
+          await cancelOrderFulfillmentWorkflow(getContainer()).run({
+            input: {
+              order_id: value.orderId,
+              fulfillment_id: fulfillment.id,
+              canceled_by: value.actorId,
+            },
+          });
+        }
+        await operateOrderFinanceWorkflow(getContainer()).run({
+          input: {
+            ...input(value),
+            action: "cancel",
+            amount: undefined,
+          },
+        });
+        await operateOrderFinanceWorkflow(getContainer()).run({
+          input: {
+            ...input(value),
+            order_id: value.siblingOrderId,
+            action: "capture",
+            amount: undefined,
+          },
+        });
+        const sibling = await read(value, value.siblingOrderId);
+        expect(sibling.nativeSplit).toBe(true);
+        expect(sibling.financialProblem).toBeNull();
+        expect(sibling.view.finance).toMatchObject({
+          captured_total: 30,
+          refunded_total: 0,
+          refundable_total: 30,
+        });
+        expect((await read(value)).view.finance.captured_total).toBe(0);
+        expect(stripe.state).toMatchObject({
+          captureCalls: 1,
+          refundCreates: 0,
+        });
+      });
+
       it("adopts a confirmed refund after its lost provider response removed the provisional native refund", async () => {
         const value = await fixture();
+        const legacy = await read(value);
+        const captureCalls = stripe.state.captureCalls;
+        const posts = stripe.requests.filter(
+          (row) => row.method === "POST",
+        ).length;
+        const eventBus = getContainer().resolve<IEventBusModuleService>(
+          Modules.EVENT_BUS,
+        );
+        for (let replay = 0; replay < 2; replay++) {
+          await eventBus.emit({
+            name: PaymentEvents.CAPTURED,
+            data: { id: value.paymentId },
+          });
+          await drainNativeEvents();
+          const observed = await read(value);
+          expect(observed.nativeSplit).toBe(false);
+          expect(observed.group).toEqual(legacy.group);
+          expect(stripe.state).toMatchObject({
+            captureCalls,
+            refundCreates: 0,
+          });
+          expect(
+            stripe.requests.filter((row) => row.method === "POST"),
+          ).toHaveLength(posts);
+        }
         const request = input(value);
         stripe.state.loseRefundResponse = true;
         await expect(operate(request)).rejects.toMatchObject({

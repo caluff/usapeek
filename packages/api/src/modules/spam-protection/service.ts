@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
 import Redis from "ioredis";
+import { REDIS_CONNECTION_OPTIONS } from "../../lib/redis-options";
 import type { Logger } from "@medusajs/framework/types";
 import { MedusaError } from "@medusajs/framework/utils";
 import type { SpamProtectionBucket } from "../../lib/spam-protection/policy";
@@ -8,8 +9,11 @@ import type { SpamProtectionBucket } from "../../lib/spam-protection/policy";
 // Expirations belong to the first accepted request, not the latest attempt.
 export const CONSUME_SPAM_BUDGET = `
 local retry = 0
+local missing = {}
 for i, key in ipairs(KEYS) do
-  local count = tonumber(redis.call('GET', key) or '0')
+  local current = redis.call('GET', key)
+  local count = tonumber(current or '0')
+  if not current then missing[key] = true end
   local limit = tonumber(ARGV[i * 2 - 1])
   local seconds = tonumber(ARGV[i * 2])
   if count >= limit then
@@ -23,7 +27,10 @@ for i, key in ipairs(KEYS) do
 end
 if retry > 0 then return math.max(1, math.ceil(retry / 1000)) end
 for i, key in ipairs(KEYS) do
-  if redis.call('INCR', key) == 1 then
+  if missing[key] then
+    redis.call('SET', key, '1', 'EX', tonumber(ARGV[i * 2]))
+    missing[key] = nil
+  elseif redis.call('INCR', key) == 1 then
     redis.call('EXPIRE', key, tonumber(ARGV[i * 2]))
   end
 end
@@ -46,6 +53,7 @@ export default class SpamProtectionService {
     }
     this.hashSecret = options.hashSecret;
     this.redis = new Redis(options.redisUrl, {
+      ...REDIS_CONNECTION_OPTIONS,
       connectTimeout: 2000,
       commandTimeout: 2000,
       maxRetriesPerRequest: 1,

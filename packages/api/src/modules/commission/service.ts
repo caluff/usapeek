@@ -160,6 +160,11 @@ export default class CommissionModuleService extends NativeCommissionService {
           transactionContext,
         );
         const byAnchor = uniqueLines(lines);
+        if (lines.some((line) => !line.commission_rate_id || line.provider_id !== "system"))
+          throw new MedusaError(
+            MedusaError.Types.NOT_ALLOWED,
+            "An original financial sale requires a verifiable system commission rule.",
+          );
         for (const item of context.items ?? []) {
           if (!byAnchor.has(`item:${item.id}`)) {
             throw new MedusaError(
@@ -169,13 +174,13 @@ export default class CommissionModuleService extends NativeCommissionService {
           }
         }
         const rates = await this.listCommissionRates(
-          { id: [...new Set(lines.map((line) => line.commission_rate_id))] },
+          { id: [...new Set(lines.flatMap((line) => line.commission_rate_id ? [line.commission_rate_id] : []))] },
           { relations: ["rules", "values"] },
           transactionContext,
         );
         const rateById = new Map(rates.map((rate) => [rate.id, rate]));
         const resolved = lines.map((line) => {
-          const rate = rateById.get(line.commission_rate_id);
+          const rate = line.commission_rate_id ? rateById.get(line.commission_rate_id) : undefined;
           if (!rate)
             throw new MedusaError(
               MedusaError.Types.INVALID_DATA,
@@ -290,6 +295,8 @@ export default class CommissionModuleService extends NativeCommissionService {
         rate: line.rate,
         amount: line.amount,
         description: line.description,
+        provider_id: line.provider_id ?? "system",
+        data: line.data,
       };
     });
   }

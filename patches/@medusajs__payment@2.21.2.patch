@@ -1,0 +1,12 @@
+diff --git a/dist/services/payment-module.js b/dist/services/payment-module.js
+index b427022..61fb376 100644
+--- a/dist/services/payment-module.js
++++ b/dist/services/payment-module.js
+@@ -515,6 +515,7 @@ class PaymentModuleService extends utils_1.ModulesSdkUtils.MedusaService(generat
+             amount: refund.raw_amount,
+             context: {
+                 idempotency_key: refund.id,
++                refund_metadata: refund.metadata,
+             },
+         });
+         await this.paymentService_.update({ id: payment.id, data: paymentData.data }, sharedContext);

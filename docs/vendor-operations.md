@@ -166,8 +166,8 @@ correspondiente autorización.
 
 La entrega real de correo y el recorrido autenticado completo requieren pruebas
 integradas; tipos y builds no sustituyen esa validación. Los tests unitarios se
-retiraron el 2026-10-03; se conservan 15 suites de integración con preflight de
-infraestructura aislada. Los dominios,
+retiraron por solicitud del usuario; se conservan las suites de integración con
+preflight de infraestructura aislada. Los dominios,
 remitentes, credenciales live y despliegue definitivos pertenecen a la etapa
 posterior de preparación para producción. No son parte de las fases obligatorias
 del plan de cierre funcional. No incluir secretos ni credenciales en evidencias.
@@ -199,7 +199,6 @@ pnpm --filter @usapeek/api contracts:generate
 pnpm --filter @usapeek/api contracts:check
 pnpm lint
 pnpm typecheck
-pnpm test
 pnpm build
 pnpm peers check
 ```

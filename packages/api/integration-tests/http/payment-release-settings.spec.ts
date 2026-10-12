@@ -25,6 +25,7 @@ import {
 import { createSellerAccountWorkflow } from "@mercurjs/core/workflows";
 import { medusaIntegrationTestRunner } from "@medusajs/test-utils";
 import Redis from "ioredis";
+import { REDIS_CONNECTION_OPTIONS } from "../../src/lib/redis-options";
 import type { PaymentReleaseSettingsResponse } from "../../src/lib/order-finance/contracts";
 import { automaticSettlementEnabled } from "../../src/lib/order-finance/automatic-settlement";
 import {
@@ -166,7 +167,7 @@ if (process.env.PAYMENT_RELEASE_SETTINGS_TESTS !== "disposable-local") {
           else {
             const { result } = await createRbacPoliciesWorkflow(
               getContainer(),
-            ).run({ input: { policies: [grant] } });
+            ).run({ input: { policies: [{ ...grant, key: `${grant.resource}:${grant.operation}` }] } });
             policyIds.push(...result.map((policy) => policy.id));
           }
         }
@@ -730,6 +731,7 @@ if (process.env.PAYMENT_RELEASE_SETTINGS_TESTS !== "disposable-local") {
         const acquire = jest.spyOn(locking, "acquire");
         const release = jest.spyOn(locking, "release");
         const redis = new Redis(process.env.REDIS_URL!, {
+          ...REDIS_CONNECTION_OPTIONS,
           lazyConnect: true,
           maxRetriesPerRequest: 1,
         });

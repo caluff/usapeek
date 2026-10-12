@@ -74,18 +74,14 @@ de reintento ni procesos de reenvío masivo.
 
 ## Validación
 
-Las pruebas de acceso cubren firma alterada, vencimiento, cambio de destinatario,
-rotación de secreto, borradores, lectura de un solo pedido y eliminación de datos
-privados. Las pruebas de correo simulan la entrega, el replay y los errores del
-proveedor. Las pruebas de asociación comprueban el correo de Google, la propiedad
-actual, la aparición en la cuenta, los intentos simultáneos y la conservación de
-otros pedidos, del carrito y del grupo de compra. La suite HTTP usa PostgreSQL/Redis
-aislados y workflows Medusa reales; los proveedores externos permanecen
-deshabilitados.
+Las pruebas unitarias de acceso, correo y frontend se retiraron por solicitud del
+usuario. Se conserva `packages/api/integration-tests/http/order-tracking.spec.ts`,
+que usa PostgreSQL/Redis aislados y workflows Medusa reales con proveedores
+externos deshabilitados. Revisar su cabecera y la
+[guía de integraciones HTTP](../packages/api/integration-tests/http/README.md)
+antes de ejecutarla. No usar la base habitual ni equiparar esta integración con
+la cobertura de las pruebas retiradas.
 
 ```powershell
 pnpm --filter @usapeek/api tracking:contracts:check
-pnpm --filter @usapeek/api test:unit
-pnpm --dir apps/web exec tsx --test features/order-tracking/read.test.mjs features/order-tracking/account-link.test.mjs
-pnpm --dir apps/web exec tsx --test features/order-tracking/progress.test.mjs
 ```

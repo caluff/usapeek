@@ -72,6 +72,7 @@ export function assertNativeFinanceRedis(
   } else requireEmptyOptions(projectOptions);
 
   const eventBusOptions = new WeakSet<object>();
+  const spamProtectionOptions = new WeakSet<object>();
   const requireConnection = (value: unknown) => {
     requireLocal(record(value));
     requireLocal(localUrl(value.redisUrl) === expected);
@@ -89,6 +90,17 @@ export function assertNativeFinanceRedis(
       "prefix",
       "compressionThreshold",
     ]);
+    if (spamProtectionOptions.has(value) && "hashSecret" in value) {
+      const project = configuration.projectConfig;
+      requireLocal(record(project));
+      const http = project.http;
+      requireLocal(
+        record(http) &&
+          typeof http.cookieSecret === "string" &&
+          value.hashSecret === http.cookieSecret,
+      );
+      allowed.add("hashSecret");
+    }
     // MedusaApp injects shared SQL metadata into every internal module. The
     // event-bus loader ignores it; Redis providers must still reject this key.
     if (eventBusOptions.has(value) && "database" in value) {
@@ -128,7 +140,12 @@ export function assertNativeFinanceRedis(
       );
       allowed.add("database");
     }
-    requireLocal(Object.keys(value).every((key) => allowed.has(key)));
+    const unknownKeys = Object.keys(value).filter((key) => !allowed.has(key));
+    if (unknownKeys.length)
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        `Native finance QA rejected unverified Redis option keys: ${unknownKeys.join(", ")}.`,
+      );
     requireEmptyOptions(value.redisOptions);
     // The workflow engine also accepts legacy `redis.options`.
     requireEmptyOptions(value.options);
@@ -153,6 +170,13 @@ export function assertNativeFinanceRedis(
       // Do not let a provider omit its URL and silently use a fallback target.
       const resolution = value.resolve;
       if (typeof resolution === "string") {
+        if (
+          resolution
+            .replaceAll("\\", "/")
+            .endsWith("/src/modules/spam-protection") &&
+          record(value.options)
+        )
+          spamProtectionOptions.add(value.options);
         if (
           resolution === "@medusajs/medusa/event-bus-redis" &&
           record(value.options)

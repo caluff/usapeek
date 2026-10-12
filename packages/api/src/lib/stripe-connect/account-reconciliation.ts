@@ -1,4 +1,5 @@
-import Stripe from "stripe";
+import type Stripe from "stripe";
+import { createStripeClient } from "../stripe-client";
 import { randomUUID } from "node:crypto";
 import type { MedusaContainer } from "@medusajs/framework/types";
 import {
@@ -183,7 +184,7 @@ export async function reconcileStripeAccount(
     const stripeId = local.data?.id;
     if (typeof stripeId !== "string" || !/^acct_[A-Za-z0-9]+$/.test(stripeId))
       throw unavailable();
-    const stripe = new Stripe(configuration.apiKey, {
+    const stripe = createStripeClient(configuration.apiKey, {
       timeout: 10000,
       maxNetworkRetries: 0,
     });

@@ -78,6 +78,10 @@ function prepareDeployment({
     path.join(deploymentRoot, "pnpm-workspace.yaml"),
     `${JSON.stringify(settings, null, 2)}\n`,
   );
+  fs.copyFileSync(
+    path.join(workspaceRoot, ".pnpmfile.mjs"),
+    path.join(deploymentRoot, ".pnpmfile.mjs"),
+  );
   manifest.packageManager = rootManifest.packageManager;
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   return settings;

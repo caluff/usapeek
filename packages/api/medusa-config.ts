@@ -1,6 +1,12 @@
 import { existsSync } from "node:fs";
 import path from "path";
-import { loadEnv, MedusaError } from "@medusajs/framework/utils";
+import {
+  FlagRouter,
+  loadEnv,
+  MedusaError,
+  registerFeatureFlag,
+} from "@medusajs/framework/utils";
+import CachingFeatureFlag from "@medusajs/medusa/feature-flags/caching";
 import { withMercur } from "@mercurjs/core";
 import { getResendConfiguration } from "./src/modules/resend/configuration";
 import { getStripeConnectConfiguration } from "./src/lib/stripe-connect-configuration";
@@ -139,6 +145,17 @@ if (jwtSecret === cookieSecret) {
   );
 }
 
+const featureFlags = {
+  rbac: true,
+  seller_registration: false,
+};
+const cachingFlagRouter = new FlagRouter({});
+registerFeatureFlag({
+  flag: CachingFeatureFlag,
+  projectConfigFlags: featureFlags,
+  router: cachingFlagRouter,
+});
+
 module.exports = withMercur({
   projectConfig: {
     databaseUrl,
@@ -178,11 +195,10 @@ module.exports = withMercur({
   admin: {
     disable: true,
   },
-  featureFlags: {
-    rbac: true,
-    seller_registration: false,
-  },
+  featureFlags,
   modules: [
+    // Medusa resolves its default modules before loading config.featureFlags.
+    { resolve: "@medusajs/medusa/rbac" },
     { resolve: "./src/modules/spam-protection", options: { redisUrl, hashSecret: cookieSecret } },
     { resolve: "./src/modules/order-notifications", options: { redisUrl } },
     ...(googleAuthConfiguration
@@ -274,7 +290,9 @@ module.exports = withMercur({
         ],
       },
     },
-    {
+    // Clear retained entries with `pnpm redis:cache:clear` before re-enabling
+    // after a disabled period; see docs/local-development.md.
+    ...(cachingFlagRouter.isFeatureEnabled(CachingFeatureFlag.key) ? [{
       resolve: "@medusajs/medusa/caching",
       options: {
         providers: [
@@ -286,7 +304,7 @@ module.exports = withMercur({
           },
         ],
       },
-    },
+    }] : []),
     {
       resolve: "@medusajs/medusa/event-bus-redis",
       options: {

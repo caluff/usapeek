@@ -21,6 +21,115 @@ import { validateMarketplaceReturnWorkflow } from "../workflows/validate-marketp
 import { invalidateOrderNotificationsWorkflow } from "../workflows/invalidate-order-notifications";
 import { invalidateVendorSettlementsWorkflow } from "../workflows/invalidate-vendor-settlements";
 
+const collectionOwnerSchema = z.object({
+  id: z.string().min(1),
+  cart: z.object({ id: z.string().min(1) }).nullish(),
+  metadata: z.record(z.string(), z.unknown()).nullish(),
+});
+const cartLinksSchema = z
+  .array(z.object({ cart_id: z.string().min(1) }))
+  .max(1);
+
+async function resolvePaymentCartId(
+  req: AuthenticatedMedusaRequest,
+  input: { payment_id: string } | { payment_collection_id: string },
+) {
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
+  let collection: z.infer<typeof collectionOwnerSchema> | null | undefined;
+  if ("payment_id" in input) {
+    const { data } = await query.graph(
+      {
+        entity: "payment",
+        fields: [
+          "id",
+          "payment_collection.id",
+          "payment_collection.cart.id",
+          "payment_collection.metadata",
+        ],
+        filters: { id: input.payment_id },
+      },
+      { cache: { enable: false } },
+    );
+    collection = z
+      .array(
+        z.object({
+          id: z.literal(input.payment_id),
+          payment_collection: collectionOwnerSchema.nullish(),
+        }),
+      )
+      .max(1)
+      .parse(data)[0]?.payment_collection;
+  } else {
+    const { data } = await query.graph(
+      {
+        entity: "payment_collection",
+        fields: ["id", "cart.id", "metadata"],
+        filters: { id: input.payment_collection_id },
+      },
+      { cache: { enable: false } },
+    );
+    collection = z
+      .array(
+        collectionOwnerSchema.extend({
+          id: z.literal(input.payment_collection_id),
+        }),
+      )
+      .max(1)
+      .parse(data)[0];
+  }
+  if (!collection) return;
+  let cartId = collection.cart?.id;
+  if (!cartId) {
+    // Split payments belong to an order rather than directly to its cart.
+    const { data: links } = await query.graph(
+      {
+        entity: "order_payment_collection",
+        fields: ["order_id"],
+        filters: { payment_collection_id: collection.id },
+      },
+      { cache: { enable: false } },
+    );
+    const link = z
+      .array(z.object({ order_id: z.string().min(1) }))
+      .max(1)
+      .parse(links)[0];
+    if (link) {
+      const { data: carts } = await query.graph(
+        {
+          entity: "order_cart",
+          fields: ["cart_id"],
+          filters: { order_id: link.order_id },
+        },
+        { cache: { enable: false } },
+      );
+      cartId = cartLinksSchema.parse(carts)[0]?.cart_id;
+    }
+  }
+  const originalCollectionId = collection.metadata?.cart_payment_collection_id;
+  if (originalCollectionId !== undefined) {
+    const parentId = z.string().min(1).parse(originalCollectionId);
+    const { data: carts } = await query.graph(
+      {
+        entity: "cart_payment_collection",
+        fields: ["cart_id"],
+        filters: { payment_collection_id: parentId },
+      },
+      { cache: { enable: false } },
+    );
+    const originalCart = cartLinksSchema.length(1).parse(carts)[0];
+    if (
+      parentId === collection.id ||
+      (cartId && cartId !== originalCart.cart_id)
+    )
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "El pago no tiene una compra original inequívoca.",
+      );
+    cartId = originalCart.cart_id;
+  }
+  return cartId;
+}
+
 export async function guardOrderFinanceWriters(
   req: AuthenticatedMedusaRequest,
   res: MedusaResponse,
@@ -29,7 +138,11 @@ export async function guardOrderFinanceWriters(
   let route: string;
   try {
     const rawPath = req.originalUrl.split("?")[0];
-    if (/%2f|%5c/i.test(rawPath)) throw new Error("Encoded path separator");
+    if (/%2f|%5c/i.test(rawPath))
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Encoded path separator",
+      );
     route = rawPath
       .split("/")
       .map((part, index) => {
@@ -108,43 +221,25 @@ export async function guardOrderFinanceWriters(
       if (!editOrderId) return next();
     }
     const orderId = orderMatch?.[1] ?? changeOrderId ?? editOrderId;
-    const { data: carts } = orderId
-      ? await query.graph(
-          {
-            entity: "order_cart",
-            fields: ["cart_id"],
-            filters: { order_id: orderId },
-          },
-          { cache: { enable: false } },
-        )
-      : collectionMatch
-        ? await query.graph(
-            {
-              entity: "payment_collection",
-              fields: ["cart.id"],
-              filters: { id: collectionMatch[1] },
-            },
-            { cache: { enable: false } },
-          )
-        : await query.graph(
-            {
-              entity: "payment",
-              fields: ["payment_collection.cart.id"],
-              filters: { id: paymentMatch![1] },
-            },
-            { cache: { enable: false } },
-          );
-    const candidate = carts[0] as
-      | {
-          cart_id?: string;
-          cart?: { id?: string };
-          payment_collection?: { cart?: { id?: string } };
-        }
-      | undefined;
-    const cartId =
-      candidate?.cart_id ??
-      candidate?.cart?.id ??
-      candidate?.payment_collection?.cart?.id;
+    let cartId: string | undefined;
+    if (orderId) {
+      const { data: carts } = await query.graph(
+        {
+          entity: "order_cart",
+          fields: ["cart_id"],
+          filters: { order_id: orderId },
+        },
+        { cache: { enable: false } },
+      );
+      cartId = cartLinksSchema.parse(carts)[0]?.cart_id;
+    } else {
+      cartId = await resolvePaymentCartId(
+        req,
+        collectionMatch
+          ? { payment_collection_id: collectionMatch[1] }
+          : { payment_id: paymentMatch![1] },
+      );
+    }
     if (!cartId) return next();
     const { data: groups } = await query.graph(
       {

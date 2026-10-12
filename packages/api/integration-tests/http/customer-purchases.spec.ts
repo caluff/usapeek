@@ -518,7 +518,7 @@ if (process.env.CUSTOMER_PURCHASES_TESTS !== "disposable-local") {
               getContainer(),
             ).run({
               input: {
-                policies: [{ resource, operation: PolicyOperation.read }],
+                policies: [{ key: `${resource}:${PolicyOperation.read}`, resource, operation: PolicyOperation.read }],
               },
             }));
           }

@@ -62,7 +62,7 @@ function validateCart(cart: CartOwnership, customerId: string | undefined, opera
   }
 }
 
-const validateCartOwnershipStep = createStep(
+const validateStoreCartOwnershipStep = createStep(
   "validate-store-cart-ownership",
   async (input: Input, { container }) => {
     const query = container.resolve(ContainerRegistrationKeys.QUERY);
@@ -118,10 +118,10 @@ const validateCartOwnershipStep = createStep(
 );
 
 // A preflight preserves native route validators and Mercur's occupied hooks.
-export const validateCartOwnershipWorkflow = createWorkflow(
+const validateStoreCartOwnershipWorkflow = createWorkflow(
   "validate-store-cart-ownership",
   function (input: Input) {
-    return new WorkflowResponse(validateCartOwnershipStep(input));
+    return new WorkflowResponse(validateStoreCartOwnershipStep(input));
   },
 );
 
@@ -130,7 +130,9 @@ export const validateCartOwnershipWorkflow = createWorkflow(
 export async function validateCartCompletionBuyer(container: MedusaContainer, cartId: string) {
   if (!container.hasRegistration(STORE_CART_BUYER_CONTEXT)) return;
   const context = container.resolve<{ customer_id?: string }>(STORE_CART_BUYER_CONTEXT);
-  await validateCartOwnershipWorkflow(container).run({ input: {
+  await validateStoreCartOwnershipWorkflow(container).run({ input: {
     resource: "cart", id: cartId, operation: "complete", customer_id: context.customer_id,
   } });
 }
+
+export { validateStoreCartOwnershipWorkflow as validateCartOwnershipWorkflow };
