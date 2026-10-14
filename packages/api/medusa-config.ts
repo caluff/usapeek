@@ -168,7 +168,7 @@ module.exports = withMercur({
       },
       pool: {
         min: 0,
-        max: 4,
+        max: 2,
         idleTimeoutMillis: 30_000,
       },
     },
