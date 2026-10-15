@@ -183,7 +183,7 @@ patchedDependencies:
   '@medusajs/framework@2.21.2': 1fa8bc50b0d71d326dc873ec502c1064d2459433d96e86846553780b80c2a584
   '@medusajs/payment@2.21.2': 217c65fcb177b6167aa326cfc8e1bbbb78d488ac9aa51e9e2b853e4cefc157c6
   '@mercurjs/core@2.3.7': 786d74efb76016e67eca9bae6295d5ae1060a2de9a3084fda0253640380d4c65
-  '@mercurjs/payout-stripe-connect@2.3.7': 04f7800b415d91de99142672e2ad06cba1cb9f11bc2907f125a24396f4227fe6
+  '@mercurjs/payout-stripe-connect@2.3.7': 1d7462055e988b79ca515bb1c6863f74a1e6a873aee30a15312cf76dcaa59487
   ts-node@10.9.2: f7ba72b46db2306019101f51f4212332c6bbadc12fc0e5c731bf24fe95d9fde6
 
 importers:
@@ -508,7 +508,7 @@ importers:
         version: 2.3.7(patch_hash=786d74efb76016e67eca9bae6295d5ae1060a2de9a3084fda0253640380d4c65)(@medusajs/admin-sdk@2.21.2)(@medusajs/cli@2.21.2(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))(@medusajs/framework@2.21.2(patch_hash=1fa8bc50b0d71d326dc873ec502c1064d2459433d96e86846553780b80c2a584)(@medusajs/cli@2.21.2(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)(vite@7.3.7(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.15)(yaml@2.9.0))(zod@4.6.5))(@medusajs/icons@2.21.2(react@18.3.1))(@medusajs/medusa@2.21.2)(@medusajs/test-utils@2.21.2)(express@4.22.2(supports-color@8.1.1))(supports-color@8.1.1)
       '@mercurjs/payout-stripe-connect':
         specifier: 2.3.7
-        version: 2.3.7(patch_hash=04f7800b415d91de99142672e2ad06cba1cb9f11bc2907f125a24396f4227fe6)(@medusajs/framework@2.21.2(patch_hash=1fa8bc50b0d71d326dc873ec502c1064d2459433d96e86846553780b80c2a584)(@medusajs/cli@2.21.2(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)(vite@7.3.7(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.15)(yaml@2.9.0))(zod@4.6.5))
+        version: 2.3.7(patch_hash=1d7462055e988b79ca515bb1c6863f74a1e6a873aee30a15312cf76dcaa59487)(@medusajs/framework@2.21.2(patch_hash=1fa8bc50b0d71d326dc873ec502c1064d2459433d96e86846553780b80c2a584)(@medusajs/cli@2.21.2(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)(vite@7.3.7(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.15)(yaml@2.9.0))(zod@4.6.5))
       '@mercurjs/types':
         specifier: 2.3.7
         version: 2.3.7(supports-color@8.1.1)(vite@7.3.7(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.15)(yaml@2.9.0))
@@ -11572,7 +11572,7 @@ snapshots:
 
   '@mercurjs/docs@2.3.7': {}
 
-  '@mercurjs/payout-stripe-connect@2.3.7(patch_hash=04f7800b415d91de99142672e2ad06cba1cb9f11bc2907f125a24396f4227fe6)(@medusajs/framework@2.21.2(patch_hash=1fa8bc50b0d71d326dc873ec502c1064d2459433d96e86846553780b80c2a584)(@medusajs/cli@2.21.2(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)(vite@7.3.7(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.15)(yaml@2.9.0))(zod@4.6.5))':
+  '@mercurjs/payout-stripe-connect@2.3.7(patch_hash=1d7462055e988b79ca515bb1c6863f74a1e6a873aee30a15312cf76dcaa59487)(@medusajs/framework@2.21.2(patch_hash=1fa8bc50b0d71d326dc873ec502c1064d2459433d96e86846553780b80c2a584)(@medusajs/cli@2.21.2(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)(vite@7.3.7(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.15)(yaml@2.9.0))(zod@4.6.5))':
     dependencies:
       '@medusajs/framework': 2.21.2(patch_hash=1fa8bc50b0d71d326dc873ec502c1064d2459433d96e86846553780b80c2a584)(@medusajs/cli@2.21.2(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))(@types/node@26.6.5)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)(vite@7.3.7(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.15)(yaml@2.9.0))(zod@4.6.5)
       stripe: 15.12.0

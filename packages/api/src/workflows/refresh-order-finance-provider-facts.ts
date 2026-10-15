@@ -1,3 +1,4 @@
+import { isStripeLivemode } from "../lib/stripe-mode";
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import type { MedusaContainer } from "@medusajs/framework/types";
@@ -10,7 +11,7 @@ import {
   WorkflowResponse,
 } from "@medusajs/framework/workflows-sdk";
 import { withFinanceExecutionLock } from "../lib/order-finance/execution-lock";
-import { financeStripeClient } from "../lib/order-finance/provider";
+import { verifiedFinanceStripeClient } from "../lib/order-finance/provider";
 import { readOrderFinance } from "../lib/order-finance/read";
 import {
   readOrderFinanceReportingSources,
@@ -105,7 +106,7 @@ function assertRefreshable(
     payment &&
       collection.payments.length === 1 &&
       payment.provider_id === "pp_stripe_stripe" &&
-      payment.data.livemode === false &&
+      isStripeLivemode(payment.data.livemode) &&
       payment.data.id.startsWith("pi_") &&
       MathBN.eq(payment.amount, collection.amount) &&
       group.orders.every((order) => {
@@ -227,10 +228,10 @@ export async function inspectOrderFinanceProviderFacts(
 }
 
 // Supply only GET capabilities, even though the configured SDK supports money writes.
-function observationReader(): NonNullable<
-  Parameters<typeof recordOrderFinanceProviderFacts>[2]
+async function observationReader(): Promise<
+  NonNullable<Parameters<typeof recordOrderFinanceProviderFacts>[2]>
 > {
-  const stripe = financeStripeClient();
+  const stripe = await verifiedFinanceStripeClient();
   return {
     paymentIntents: {
       retrieve: stripe.paymentIntents.retrieve.bind(stripe.paymentIntents),
@@ -324,7 +325,7 @@ export async function refreshOrderFinanceProviderFacts(
               actor_id: input.actor_id,
               owned_token: token,
             },
-            observationReader(),
+            await observationReader(),
           );
           const latest = await readScope(container, input, {
             id: ownerId,

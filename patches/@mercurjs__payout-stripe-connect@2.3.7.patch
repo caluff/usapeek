@@ -24,12 +24,12 @@ index 975733e..abdf904 100644
 +      case "account.updated": {
 +        const snapshot = event.data.object;
 +        const accountId = snapshot.metadata?.account_id;
-+        if (event.livemode !== false || typeof snapshot.id !== "string" ||
++        if (event.livemode !== (this.config_.livemode === true) || typeof snapshot.id !== "string" ||
 +            !snapshot.id.startsWith("acct_") || event.account !== snapshot.id ||
 +            typeof accountId !== "string" || !accountId) {
 +          throw new MedusaError(
 +            MedusaError.Types.INVALID_DATA,
-+            "Invalid Stripe test account event."
++            "Invalid Stripe account event."
 +          );
 +        }
 +        // Re-read current account state so delayed snapshots cannot reactivate it.

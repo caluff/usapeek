@@ -5,7 +5,9 @@ export function commerceAutomationEnabled(
   environment: NodeJS.ProcessEnv = process.env,
 ): boolean {
   if (environment.STRIPE_AUTOMATIC_JOBS_ENABLED !== "true") return false;
-  return getStripeConnectConfiguration(environment)?.jobsEnabled === true;
+  const configuration = getStripeConnectConfiguration(environment);
+  // LIVE preparation does not enable the unfinished commerce automation pipeline.
+  return configuration?.mode === "test" && configuration.jobsEnabled === true;
 }
 
 // These are code integration gates, deliberately not environment switches.

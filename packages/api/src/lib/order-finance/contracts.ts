@@ -1,3 +1,4 @@
+import { getStripeMode, stripeModeSchema } from "../stripe-mode";
 import { z } from "@medusajs/framework/zod";
 
 export const paymentCaptureModeSchema = z.enum(["manual", "automatic"]);
@@ -53,7 +54,9 @@ export type FinanceReportingPeriod = (typeof FINANCE_REPORTING_PERIODS)[number];
 export const financeReportingQuerySchema = z
   .object({
     period: z.enum(FINANCE_REPORTING_PERIODS),
-    mode: z.literal("test"),
+    mode: stripeModeSchema
+      .default(() => getStripeMode())
+      .refine((mode) => mode === getStripeMode(), "Stripe mode mismatch"),
     currency_code: z.literal("usd"),
     data_kind: z.enum(["ordinary", "qa_fixture"]),
   })
@@ -200,7 +203,9 @@ export type VendorEarningsResponse = {
 };
 
 export const vendorSettlementsQuerySchema = z.strictObject({
-  mode: z.literal("test"),
+  mode: stripeModeSchema
+    .default(() => getStripeMode())
+    .refine((mode) => mode === getStripeMode(), "Stripe mode mismatch"),
   currency_code: z.literal("usd"),
   data_kind: z.enum(["ordinary", "qa_fixture"]),
   limit: z.coerce.number().int().min(1).max(50).default(10),
@@ -225,7 +230,7 @@ export type VendorSettlementItem = {
 
 export type VendorSettlementsResponse = {
   settlements: {
-    mode: "test";
+    mode: FinanceReportingQuery["mode"];
     currency_code: "usd";
     data_kind: "ordinary" | "qa_fixture";
     automatic_enabled: boolean;

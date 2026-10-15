@@ -17,6 +17,7 @@ import { FinanceProviderCost } from "../models/finance-provider-cost";
 import { OrderCompletion } from "../models/order-completion";
 import { VendorSettlementProjection } from "../models/vendor-settlement-projection";
 import { VendorFinanceReportingProjection } from "../models/vendor-finance-reporting-projection";
+import { Migration20261015212035 } from "../migrations/Migration20261015212035";
 import type {
   ProviderFinanceCost,
   ProviderFinanceFact,
@@ -45,12 +46,15 @@ const recordedAt = "2026-09-19T12:00:00.000Z";
 const effectiveAt = "2026-09-18T12:00:00.000Z";
 const reconciledAt = "2026-09-22T12:00:00.000Z";
 
-function observation(groupId: string): ProviderFactsObservation {
+function observation(
+  groupId: string,
+  mode: "test" | "live" = "test",
+): ProviderFactsObservation {
   const fact: ProviderFinanceFact = {
-    key: "stripe:test:acct_fixture:refund:re_fixture",
+    key: `stripe:${mode}:acct_fixture:refund:re_fixture`,
     kind: "refund",
     provider: "stripe",
-    mode: "test",
+    mode,
     account_id: "acct_fixture",
     group_id: groupId,
     operation_id: "refund:fixture",
@@ -68,7 +72,7 @@ function observation(groupId: string): ProviderFactsObservation {
     provider_transfer_group: null,
     amount_minor: 2000,
     currency_code: "usd",
-    data_kind: "qa_fixture",
+    data_kind: mode === "test" ? "qa_fixture" : "ordinary",
     component_attribution: "unallocated",
     effect_status: "confirmed",
     reconciliation_status: "matched",
@@ -81,9 +85,9 @@ function observation(groupId: string): ProviderFactsObservation {
     reconciled_at: recordedAt,
   };
   const cost: ProviderFinanceCost = {
-    key: "stripe:test:acct_fixture:balance_transaction:txn_fixture",
+    key: `stripe:${mode}:acct_fixture:balance_transaction:txn_fixture`,
     provider: "stripe",
-    mode: "test",
+    mode,
     account_id: "acct_fixture",
     balance_transaction_id: "txn_fixture",
     source_id: "re_fixture",
@@ -436,71 +440,202 @@ if (!enabled) {
           }
         });
 
-        it("deduplicates concurrent effects/costs and retains dates when pending cost becomes confirmed", async () => {
-          const first = observation(groupId);
-          await Promise.all(
-            Array.from({ length: 8 }, () =>
-              service.recordProviderObservation(first),
-            ),
-          );
-          const confirmed = structuredClone(first);
-          confirmed.facts[0].recorded_at = reconciledAt;
-          confirmed.costs[0] = {
-            ...confirmed.costs[0],
-            status: "confirmed",
-            fee_minor: 0,
-            net_minor: -2000,
-            fee_details: [],
-            recorded_at: reconciledAt,
-            reconciled_at: reconciledAt,
-          };
-          const saved = await service.recordProviderObservation(confirmed);
-          expect(saved.facts[0]).toMatchObject({
-            effective_at: effectiveAt,
-            recorded_at: recordedAt,
+        it.each(["test", "live"] as const)(
+          "deduplicates concurrent %s effects/costs and retains dates when pending cost becomes confirmed",
+          async (mode) => {
+            const first = observation(groupId, mode);
+            await Promise.all(
+              Array.from({ length: 8 }, () =>
+                service.recordProviderObservation(first),
+              ),
+            );
+            const confirmed = structuredClone(first);
+            confirmed.facts[0].recorded_at = reconciledAt;
+            confirmed.costs[0] = {
+              ...confirmed.costs[0],
+              status: "confirmed",
+              fee_minor: 0,
+              net_minor: -2000,
+              fee_details: [],
+              recorded_at: reconciledAt,
+              reconciled_at: reconciledAt,
+            };
+            const saved = await service.recordProviderObservation(confirmed);
+            expect(saved.facts[0]).toMatchObject({
+              effective_at: effectiveAt,
+              recorded_at: recordedAt,
+            });
+            expect(saved.costs[0]).toMatchObject({
+              status: "confirmed",
+              fee_minor: 0,
+              recorded_at: recordedAt,
+              reconciled_at: reconciledAt,
+            });
+            expect(
+              (
+                await service.listAndCountFinanceProviderFacts({
+                  group_id: groupId,
+                })
+              )[1],
+            ).toBe(1);
+            expect(
+              (
+                await service.listAndCountFinanceProviderCosts({
+                  account_id: "acct_fixture",
+                })
+              )[1],
+            ).toBe(1);
+          },
+        );
+
+        it.each(["test", "live"] as const)(
+          "rejects a conflicting %s duplicate in a batch atomically",
+          async (mode) => {
+            const data = observation(groupId, mode);
+            data.facts.push({ ...data.facts[0], amount_minor: 2001 });
+            await expect(
+              service.recordProviderObservation(data),
+            ).rejects.toThrow();
+            expect(
+              (
+                await service.listAndCountFinanceProviderFacts({
+                  group_id: groupId,
+                })
+              )[1],
+            ).toBe(0);
+            expect(
+              (
+                await service.listAndCountFinanceProviderCosts({
+                  account_id: "acct_fixture",
+                })
+              )[1],
+            ).toBe(0);
+          },
+        );
+
+        it("keeps equal provider IDs in TEST and LIVE in separate durable namespaces", async () => {
+          const test = observation(groupId, "test");
+          const live = observation(groupId, "live");
+          await Promise.all([
+            service.recordProviderObservation(test),
+            service.recordProviderObservation(live),
+          ]);
+          await service.recordProviderObservation(test);
+          await service.recordProviderObservation(live);
+          const facts = await service.listFinanceProviderFacts({
+            group_id: groupId,
           });
-          expect(saved.costs[0]).toMatchObject({
-            status: "confirmed",
-            fee_minor: 0,
-            recorded_at: recordedAt,
-            reconciled_at: reconciledAt,
+          const costs = await service.listFinanceProviderCosts({
+            account_id: "acct_fixture",
           });
-          expect(
-            (
-              await service.listAndCountFinanceProviderFacts({
-                group_id: groupId,
-              })
-            )[1],
-          ).toBe(1);
-          expect(
-            (
-              await service.listAndCountFinanceProviderCosts({
-                account_id: "acct_fixture",
-              })
-            )[1],
-          ).toBe(1);
+          expect(facts.map((fact) => fact.id).sort()).toEqual([
+            live.facts[0].key,
+            test.facts[0].key,
+          ]);
+          expect(costs.map((cost) => cost.id).sort()).toEqual([
+            live.costs[0].key,
+            test.costs[0].key,
+          ]);
+          expect(facts.map((fact) => fact.mode).sort()).toEqual([
+            "live",
+            "test",
+          ]);
+          expect(costs.map((cost) => cost.mode).sort()).toEqual([
+            "live",
+            "test",
+          ]);
         });
 
-        it("rejects a conflicting duplicate in a batch atomically", async () => {
-          const data = observation(groupId);
-          data.facts.push({ ...data.facts[0], amount_minor: 2001 });
-          await expect(
-            service.recordProviderObservation(data),
-          ).rejects.toThrow();
-          expect(
-            (
-              await service.listAndCountFinanceProviderFacts({
-                group_id: groupId,
-              })
-            )[1],
-          ).toBe(0);
-          expect(
-            (
-              await service.listAndCountFinanceProviderCosts({
+        it.each(["facts", "costs"] as const)(
+          "rejects a %s mode/key mismatch without partial persistence",
+          async (resource) => {
+            const data = observation(groupId, "live");
+            data[resource][0].key = data[resource][0].key.replace(
+              "stripe:live:",
+              "stripe:test:",
+            );
+            await expect(
+              service.recordProviderObservation(data),
+            ).rejects.toThrow();
+            expect(
+              await service.listFinanceProviderFacts({ group_id: groupId }),
+            ).toEqual([]);
+            expect(
+              await service.listFinanceProviderCosts({
                 account_id: "acct_fixture",
-              })
-            )[1],
-          ).toBe(0);
+              }),
+            ).toEqual([]);
+          },
+        );
+
+        it("migrates Stripe modes without changing TEST evidence or RLS and refuses rollback over live or archived LIVE evidence", async () => {
+          const manager = MikroOrmWrapper.getManager();
+          const tables = [
+            "finance_provider_cost",
+            "finance_provider_fact",
+            "vendor_finance_reporting_projection",
+            "vendor_settlement_projection",
+          ];
+          for (const table of tables) {
+            await manager.execute(
+              `alter table "${table}" enable row level security`,
+            );
+            await manager.execute(
+              `create policy stripe_mode_migration_fixture on "${table}" using (false)`,
+            );
+          }
+          const security = () =>
+            manager.execute<Record<string, unknown>[]>(
+              `select c.relname, c.relrowsecurity, c.relforcerowsecurity, p.polname, pg_get_expr(p.polqual, p.polrelid) as policy
+             from pg_class c join pg_namespace n on n.oid = c.relnamespace
+             left join pg_policy p on p.polrelid = c.oid
+             where n.nspname = 'public' and c.relname in ('finance_provider_cost', 'finance_provider_fact', 'vendor_finance_reporting_projection', 'vendor_settlement_projection')
+             order by c.relname, p.polname`,
+            );
+          const constraints = () =>
+            manager.execute<Array<{ table_name: string; definition: string }>>(
+              `select conrelid::regclass::text as table_name, pg_get_constraintdef(oid) as definition
+             from pg_constraint where conname in ('finance_provider_cost_mode_check', 'finance_provider_fact_mode_check', 'vendor_finance_reporting_projection_mode_check', 'vendor_settlement_projection_mode_check')
+             order by conname`,
+            );
+          const apply = async (direction: "up" | "down") => {
+            const migration = new Migration20261015212035(
+              undefined as never,
+              undefined as never,
+            );
+            await migration[direction]();
+            for (const sql of migration.getQueries())
+              await manager.execute(String(sql));
+          };
+          const originalSecurity = await security();
+          const test = observation(groupId);
+          await service.recordProviderObservation(test);
+          const originalTest = await service.listFinanceProviderFacts({
+            group_id: groupId,
+          });
+          await apply("down");
+          expect(await constraints()).toHaveLength(4);
+          for (const row of await constraints())
+            expect(row.definition).not.toContain("live");
+          await apply("up");
+          for (const row of await constraints())
+            expect(row.definition).toContain("live");
+          expect(
+            await service.listFinanceProviderFacts({ group_id: groupId }),
+          ).toEqual(originalTest);
+          expect(await security()).toEqual(originalSecurity);
+          const live = observation(groupId, "live");
+          await service.recordProviderObservation(live);
+          await expect(apply("down")).rejects.toThrow("LIVE evidence exists");
+          expect(
+            await service.retrieveFinanceProviderFact(live.facts[0].key),
+          ).toMatchObject({ mode: "live", fact: live.facts[0] });
+          await service.softDeleteFinanceProviderFacts([live.facts[0].key]);
+          await service.softDeleteFinanceProviderCosts([live.costs[0].key]);
+          await expect(apply("down")).rejects.toThrow("LIVE evidence exists");
+          expect(await security()).toEqual(originalSecurity);
+          for (const row of await constraints())
+            expect(row.definition).toContain("live");
         });
       },
     });

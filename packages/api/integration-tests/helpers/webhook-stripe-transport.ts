@@ -95,10 +95,13 @@ export function installStripeTransport(
   return { requests, rejected, restore: () => request.mockRestore() };
 }
 
-export function installWebhookStripeTransport() {
+export function installWebhookStripeTransport(platformId?: string) {
   const accounts = new Map<string, Stripe.Account>();
   const reads: string[] = [];
   const transport = installStripeTransport((request) => {
+    if (request.method === "GET" && request.path === "/v1/account" && platformId) {
+      return { statusCode: 200, body: { id: platformId, object: "account" } };
+    }
     const match = /^\/v1\/accounts\/(acct_[A-Za-z0-9]+)$/.exec(request.path);
     const account = request.method === "GET" && match && accounts.get(match[1]);
     if (!account) {

@@ -1,15 +1,20 @@
 # Allocated Stripe payment provider
 
-This wraps the installed Medusa 2.18 Stripe provider module. Configure it in place
+This wraps the installed Medusa 2.21.2 Stripe provider module. Configure it in place
 of `@medusajs/medusa/payment-stripe`, with the same provider configuration ID
 `stripe` and existing options. Its native service identifier remains `stripe`,
-preserving `pp_stripe_stripe`, and all other native Stripe variants are retained.
+preserving `pp_stripe_stripe`. TEST retains the other native Stripe variants;
+LIVE registers only the canonical provider covered by the manual allocation
+workflow.
 
-The only override suppresses a signature-verified `payment_intent.succeeded`
-webhook when both the event and intent explicitly have `livemode: false`, the
+The wrapper suppresses a signature-verified `payment_intent.succeeded`
+webhook when both the event and intent match the configured Stripe mode, the
 intent has succeeded, and its `marketplace_final_capture_operation_id` metadata
-is a nonempty string. All other events use native handling. Signature verification
-uses the native configured webhook secret; the wrapper reads no environment.
+is a nonempty string. Other matching events use native handling. The native
+webhook secret verifies the signature; mismatched or missing payment-intent
+modes are rejected. TEST remains the default. LIVE requires explicit mode,
+enablement and platform-account configuration, and monetary provider operations
+verify the platform identity before delegating to native handling.
 
 The finance workflow must persist its immutable capture plan before calling
 Stripe, include that operation ID in capture metadata, send its exact validated
@@ -26,10 +31,8 @@ does not implement an amount override or consume client-supplied payment data.
 Native final partial captures retain the original authorization and partial
 collection accounting; the finance journal owns the final-settlement distinction.
 
-This provider is not the complete financial implementation. The current local
-flows are restricted to Stripe TEST and USD, and automatic financial jobs remain
-disabled by default. General recovery, immutable commission history, monetary
-rounding, settlement and reporting remain open in the
-[development audit](../../../../../docs/develpment/development-completion-audit.md).
-In particular, a suppressed webhook cannot recover an uncertain local operation;
-the presence of fixture-specific QA recovery scripts does not close that gap.
+The historical financial readiness evidence covers Stripe TEST and USD. LIVE
+preparation uses simulated provider responses and does not certify a real payment
+or bank payout. Automatic financial jobs remain TEST-only. See the
+[main activation runbook](../../../../../docs/operations/stripe-live-main.md) for
+the disabled preparation state and the separate activation requirements.

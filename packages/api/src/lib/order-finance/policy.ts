@@ -1,3 +1,4 @@
+import { isStripeLivemode } from "../stripe-mode";
 import { BigNumber, MathBN, MedusaError } from "@medusajs/framework/utils";
 import { z } from "@medusajs/framework/zod";
 import type { OrderFinanceResponse } from "./contracts";
@@ -23,13 +24,22 @@ const paymentSchema = z.object({
   currency_code: z.string().optional(),
   amount: decimal,
   canceled_at: instant.nullable(),
-  data: z.object({ id: z.string(), livemode: z.literal(false) }).passthrough(),
+  data: z
+    .object({
+      id: z.string(),
+      livemode: z
+        .boolean()
+        .refine((value) => isStripeLivemode(value), "Stripe mode mismatch"),
+    })
+    .passthrough(),
   captures: z.array(z.object({ id: z.string(), amount: decimal })),
-  refunds: z.array(z.object({
-    id: z.string(),
-    amount: decimal,
-    metadata: z.record(z.string(), z.unknown()).nullable(),
-  })),
+  refunds: z.array(
+    z.object({
+      id: z.string(),
+      amount: decimal,
+      metadata: z.record(z.string(), z.unknown()).nullable(),
+    }),
+  ),
 });
 export const financeGroupSchema = z.object({
   id: z.string(),
@@ -46,13 +56,15 @@ export const financeGroupSchema = z.object({
           .object({ pending_difference: signedDecimal.optional() })
           .passthrough()
           .nullable(),
-        payment_collections: z.array(z.object({
-          id: z.string(),
-          currency_code: z.string().optional(),
-          amount: decimal.optional(),
-          metadata: z.record(z.string(), z.unknown()).nullable().optional(),
-          payments: z.array(paymentSchema).optional(),
-        })),
+        payment_collections: z.array(
+          z.object({
+            id: z.string(),
+            currency_code: z.string().optional(),
+            amount: decimal.optional(),
+            metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+            payments: z.array(paymentSchema).optional(),
+          }),
+        ),
         seller: z.object({ id: z.string() }),
         transactions: z.array(
           z.object({

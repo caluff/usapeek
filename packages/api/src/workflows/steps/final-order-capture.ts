@@ -1,3 +1,4 @@
+import { isStripeLivemode } from "../../lib/stripe-mode";
 import type { MedusaContainer } from "@medusajs/framework/types";
 import { MathBN, MedusaError } from "@medusajs/framework/utils";
 import {
@@ -8,14 +9,15 @@ import {
 } from "../../lib/order-finance/policy";
 import {
   assertProviderBalances,
-  financeStripeClient,
+  verifiedFinanceStripeClient,
   readFinanceProvider,
 } from "../../lib/order-finance/provider";
 import type { readOrderFinance } from "../../lib/order-finance/read";
+import { recordFinalCaptureWorkflow } from "../order-finance-native";
 import {
-  recordFinalCaptureWorkflow,
-} from "../order-finance-native";
-import { freezeFinalCaptureAllocation, splitFinalOrderCapture } from "./split-final-order-capture";
+  freezeFinalCaptureAllocation,
+  splitFinalOrderCapture,
+} from "./split-final-order-capture";
 
 // Called only by the owning finance step after its durable operation is committed.
 export async function performFinalOrderCapture(
@@ -51,7 +53,7 @@ export async function performFinalOrderCapture(
     );
   }
   await freezeFinalCaptureAllocation(container, current, orders);
-  const stripe = financeStripeClient();
+  const stripe = await verifiedFinanceStripeClient();
   const intent = await stripe.paymentIntents.capture(
     payment.data.id,
     {
@@ -68,7 +70,7 @@ export async function performFinalOrderCapture(
     intent.capture_method !== "manual" ||
     !MathBN.eq(intent.amount, MathBN.mult(payment.amount, 100)) ||
     intent.metadata?.marketplace_final_capture_operation_id !== operationId ||
-    intent.livemode ||
+    !isStripeLivemode(intent.livemode) ||
     intent.status !== "succeeded" ||
     intent.amount_capturable !== 0 ||
     !MathBN.eq(intent.amount_received, MathBN.mult(amount, 100))
@@ -91,7 +93,7 @@ export async function performFinalOrderCapture(
     !chargeId ||
     chargeId !== capturedChargeId ||
     provider.intent.id !== payment.data.id ||
-    provider.intent.livemode ||
+    !isStripeLivemode(provider.intent.livemode) ||
     provider.intent.currency !== "usd" ||
     provider.intent.status !== "succeeded" ||
     provider.intent.capture_method !== "manual" ||
@@ -155,7 +157,13 @@ export async function performFinalOrderCapture(
     released_refund_ids: evidence.released_refund_ids,
     orders: evidence.orders,
   };
-  await splitFinalOrderCapture(container, { current, orders, captureId: capture.capture_id, actorId: input.actorId, token });
+  await splitFinalOrderCapture(container, {
+    current,
+    orders,
+    captureId: capture.capture_id,
+    actorId: input.actorId,
+    token,
+  });
   await current.journal.observeGroup(
     current.group.id,
     token,

@@ -20,7 +20,8 @@ cross-domain mutations, with [links](../links/README.md) and native Query for
 relationships. Preserve native migration history when extending a module;
 inventory's README explains its version-specific integration.
 
-Stripe is TEST-only and finance is not development complete. The operation
-journal is not yet a complete immutable financial ledger. See the
-[audit](../../../../docs/develpment/development-completion-audit.md) and
-[implementation plan](../../../../docs/develpment/development-implementation-plan.md).
+The historical financial readiness evidence covers Stripe TEST, USD and manual
+operation. LIVE preparation remains disabled in main and requires separate
+activation and validation; automatic financial jobs remain TEST-only. See the
+[activation runbook](../../../../docs/operations/stripe-live-main.md) and the
+[development progress](../../../../docs/develpment/development-progress.md).

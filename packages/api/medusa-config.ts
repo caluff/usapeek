@@ -242,6 +242,7 @@ module.exports = withMercur({
                 options: {
                   apiKey: stripeConfiguration.apiKey,
                   webhookSecret: stripeConfiguration.webhookSecret,
+                  livemode: stripeConfiguration.livemode,
                 },
               },
             ]

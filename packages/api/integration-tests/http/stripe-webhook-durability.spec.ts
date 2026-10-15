@@ -6,6 +6,8 @@
  * After reserving DB15 and importing Import-ClosureTestEnvironment.ps1, set
  * STRIPE_WEBHOOK_DURABILITY_TESTS=disposable-local and run from packages/api:
  * pnpm test:integration:http --runTestsByPath integration-tests/http/stripe-webhook-durability.spec.ts
+ * Set STRIPE_WEBHOOK_DURABILITY_MODE=live for a second run with simulated LIVE
+ * events and invalid fixture keys. All HTTPS remains intercepted in both runs.
  * The runner owns a random webhook_test_* database and template. It must not run
  * beside another suite or the browser QA server sharing Redis DB15.
  *
@@ -21,6 +23,7 @@ import type SellerModule from "@mercurjs/core/modules/seller";
 import { MercurModules, PayoutAccountStatus } from "@mercurjs/types";
 import type Stripe from "stripe";
 import { createStripeClient } from "../../src/lib/stripe-client";
+import { reconcileStripeAccount } from "../../src/lib/stripe-connect/account-reconciliation";
 import { assertNativeFinanceRedis } from "../helpers/native-finance-redis-guard";
 import { useNativeEsmPayoutProvider } from "../helpers/native-esm-provider-loader";
 import { configureNativeFinanceDatabaseTls } from "../helpers/native-finance-database-tls";
@@ -29,7 +32,11 @@ import { installWebhookStripeTransport } from "../helpers/webhook-stripe-transpo
 const enabled =
   process.env.STRIPE_WEBHOOK_DURABILITY_TESTS === "disposable-local";
 const signingSecret = "whsec_OfflineWebhookDurability";
-const apiKey = "sk_test_webhook";
+const mode = process.env.STRIPE_WEBHOOK_DURABILITY_MODE ?? "test";
+if (!["test", "live"].includes(mode)) throw new Error("Invalid webhook fixture mode.");
+const livemode = mode === "live";
+const apiKey = livemode ? "sk_live_webhook" : "sk_test_webhook";
+const platformId = "acct_fixturePlatform";
 
 if (!enabled) {
   describe.skip("Stripe webhook durability (requires disposable-local opt-in)", () => {
@@ -59,13 +66,17 @@ if (!enabled) {
   process.env.DATABASE_URL = `postgres://${encodeURIComponent(process.env.DB_USERNAME)}:${encodeURIComponent(process.env.DB_PASSWORD)}@localhost:55432/${dbName}`;
   process.env.AUTH_EMAIL_ENABLED = "false";
   process.env.STRIPE_AUTOMATIC_JOBS_ENABLED = "false";
+  process.env.STRIPE_AUTOMATIC_SETTLEMENT_ENABLED = "false";
   process.env.MEDUSA_WORKER_MODE = "shared";
   process.env.MEDUSA_DISABLE_TELEMETRY = "true";
   // These are deliberately invalid provider credentials, used only for HMAC IO.
   process.env.STRIPE_API_KEY = apiKey;
+  process.env.STRIPE_MODE = mode;
+  process.env.STRIPE_LIVE_ENABLED = String(livemode);
+  process.env.STRIPE_ACCOUNT_ID = livemode ? platformId : " ";
   process.env.STRIPE_PAYOUT_WEBHOOK_SECRET = signingSecret;
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_OfflinePaymentDurability";
-  const transport = installWebhookStripeTransport();
+  const transport = installWebhookStripeTransport(livemode ? platformId : undefined);
   const stripe = createStripeClient(apiKey);
   jest.setTimeout(120_000);
 
@@ -189,7 +200,7 @@ if (!enabled) {
           id: `evt_${randomUUID().replaceAll("-", "")}`,
           object: "event",
           type: "account.updated",
-          livemode: false,
+          livemode,
           created,
           account: f.stripeId,
           data: { object: accountState(f, active) },
@@ -311,6 +322,9 @@ if (!enabled) {
               .status,
           ).toBe(400);
           expect(
+            (await post({ ...notification, livemode: !livemode })).status,
+          ).toBe(400);
+          expect(
             emit.mock.calls.some(
               ([data]) =>
                 !Array.isArray(data) && data.name === "payout.webhook_received",
@@ -323,6 +337,25 @@ if (!enabled) {
           emit.mockRestore();
         }
       });
+
+      if (livemode) {
+        it("rejects an unexpected platform before reconciling account readiness", async () => {
+          const f = await fixture();
+          transport.accounts.set(f.stripeId, accountState(f, true));
+          const configuration = process.env.STRIPE_ACCOUNT_ID;
+          process.env.STRIPE_ACCOUNT_ID = "acct_WrongPlatform";
+          const readsBefore = transport.reads.length;
+          try {
+            await expect(
+              reconcileStripeAccount(getContainer(), { payout_account_id: f.localId }),
+            ).rejects.toThrow("Stripe account verification could not be completed.");
+            expect(transport.reads).toHaveLength(readsBefore);
+            await assertSingleAccount(f, PayoutAccountStatus.PENDING);
+          } finally {
+            process.env.STRIPE_ACCOUNT_ID = configuration;
+          }
+        });
+      }
     },
   });
   // Runner cleanup is registered first, so HTTPS stays blocked through shutdown.

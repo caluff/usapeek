@@ -2,6 +2,8 @@
  * Opt-in PG/native workflow regression, with ALL Stripe IO explicitly simulated.
  * Requires the isolated TLS PostgreSQL/Redis importer and exclusive Redis DB15.
  * FINANCE_EFFECT_DURABILITY_TESTS=disposable-local. Never run beside financial QA.
+ * FINANCE_EFFECT_DURABILITY_MODE=live selects simulated LIVE responses with
+ * ordinary classification; no LIVE credentials or network access are required.
  * Checkout is bypassed by native module/link fixtures. No real provider evidence
  * or OS process crash is claimed: injected boundary failures leave real PG rows.
  */
@@ -21,6 +23,7 @@ import type {
   IInventoryService,
   IOrderModuleService,
   IPaymentModuleService,
+  MedusaContainer,
 } from "@medusajs/framework/types";
 import {
   ContainerRegistrationKeys,
@@ -61,15 +64,37 @@ import {
   inspectOrderFinanceProviderFacts,
   refreshOrderFinanceProviderFactsWorkflow,
 } from "../../src/workflows/refresh-order-finance-provider-facts";
-import { createFinanceDurabilityFixture } from "./fixtures/finance-durability-fixture";
+import { createFinanceDurabilityFixture as createNativeFinanceDurabilityFixture } from "./fixtures/finance-durability-fixture";
 import { installFinanceDurabilityStripe } from "./fixtures/finance-durability-stripe";
 import { assertNativeFinanceRedis } from "../helpers/native-finance-redis-guard";
 import { useNativeEsmPayoutProvider } from "../helpers/native-esm-provider-loader";
 import { configureNativeFinanceDatabaseTls } from "../helpers/native-finance-database-tls";
 import { cancelOrderFulfillmentWorkflow } from "@mercurjs/core/workflows/order/workflows/cancel-order-fulfillment";
+import { capturePreparedPurchase } from "../../src/lib/order-finance/automatic-capture";
+import { assertAutomaticCaptureSettings } from "../../src/lib/order-finance/capture-settings";
+import { reconcileAutomaticCaptures } from "../../src/workflows/reconcile-automatic-captures";
+import { updatePaymentCaptureSettings } from "../../src/workflows/update-payment-capture-settings";
+import { settleOrderFinanceWorkflow } from "../../src/workflows/settle-order-finance";
 
 const enabled =
   process.env.FINANCE_EFFECT_DURABILITY_TESTS === "disposable-local";
+const mode = process.env.FINANCE_EFFECT_DURABILITY_MODE ?? "test";
+if (mode !== "test" && mode !== "live")
+  throw new Error("Finance effect durability mode must be test or live.");
+const livemode = mode === "live";
+const apiKey = `sk_${mode}_durabilityfixture`;
+
+function createFinanceDurabilityFixture(
+  container: Parameters<typeof createNativeFinanceDurabilityFixture>[0],
+  options: NonNullable<
+    Parameters<typeof createNativeFinanceDurabilityFixture>[1]
+  > = {},
+) {
+  return createNativeFinanceDurabilityFixture(container, {
+    ...options,
+    livemode,
+  });
+}
 
 const restoreVendorRolesWorkflow = createWorkflow(
   "durability-fixture-restore-vendor-roles",
@@ -118,15 +143,19 @@ if (!enabled) {
   const dbName = `closure_finance_durability_${randomUUID().replaceAll("-", "")}`;
   process.env.DATABASE_URL = `postgres://${encodeURIComponent(process.env.DB_USERNAME)}:${encodeURIComponent(process.env.DB_PASSWORD)}@localhost:55432/${dbName}`;
   // These deliberately invalid credentials can only reach the installed simulator.
-  process.env.STRIPE_API_KEY = "sk_test_durabilityfixture";
+  process.env.STRIPE_API_KEY = apiKey;
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_durabilityfixture";
   process.env.STRIPE_PAYOUT_WEBHOOK_SECRET = "whsec_durabilityfixture";
   process.env.STRIPE_AUTOMATIC_JOBS_ENABLED = "false";
-  process.env.FINANCE_CHECKOUT_DATA_KIND = "qa_fixture";
+  process.env.STRIPE_MODE = mode;
+  process.env.STRIPE_LIVE_ENABLED = String(livemode);
+  process.env.STRIPE_ACCOUNT_ID = "acct_durabilityplatform";
+  process.env.STRIPE_AUTOMATIC_SETTLEMENT_ENABLED = "false";
+  process.env.FINANCE_CHECKOUT_DATA_KIND = livemode ? "ordinary" : "qa_fixture";
   process.env.AUTH_EMAIL_ENABLED = "false";
   process.env.MEDUSA_WORKER_MODE = "shared";
   jest.setTimeout(120_000);
-  let stripe = installFinanceDurabilityStripe();
+  let stripe = installFinanceDurabilityStripe(livemode);
 
   medusaIntegrationTestRunner({
     inApp: true,
@@ -160,6 +189,19 @@ if (!enabled) {
             throw new Error(
               "Disable all external adapters except the transport-simulated Stripe fixture.",
             );
+          for (const adapter of [
+            module,
+            ...(Array.isArray(providers) ? providers : []),
+          ]) {
+            if (
+              typeof adapter.resolve === "string" &&
+              /stripe/i.test(adapter.resolve) &&
+              adapter.options?.apiKey !== apiKey
+            )
+              throw new Error(
+                "Only the explicit simulated Stripe key is allowed.",
+              );
+          }
         }
         await useNativeEsmPayoutProvider(config);
         configureNativeFinanceDatabaseTls(config, dbName);
@@ -651,7 +693,7 @@ if (!enabled) {
 
       beforeEach(async () => {
         stripe.restore();
-        stripe = installFinanceDurabilityStripe();
+        stripe = installFinanceDurabilityStripe(livemode);
         const result = await dbConnection.raw(
           "select ssl from pg_stat_ssl where pid = pg_backend_pid()",
         );
@@ -663,6 +705,178 @@ if (!enabled) {
         expect(stripe.rejected).toEqual([]);
       });
       afterAll(() => stripe.restore());
+
+      if (livemode) {
+        it("keeps automatic LIVE capture disabled before any container resolution or provider call", async () => {
+          const resolve = jest.fn(() => {
+            throw new Error(
+              "Automatic LIVE capture must not resolve infrastructure.",
+            );
+          });
+          const blocked = { resolve } as unknown as MedusaContainer;
+          await expect(
+            capturePreparedPurchase(blocked, "order_preparation"),
+          ).resolves.toBe("manual");
+          await expect(
+            reconcileAutomaticCaptures(blocked),
+          ).resolves.toBeUndefined();
+          await expect(
+            assertAutomaticCaptureSettings(
+              blocked,
+              "initial",
+              "user_preparation",
+            ),
+          ).rejects.toThrow("Stripe TEST");
+          await expect(
+            updatePaymentCaptureSettings(blocked, {
+              mode: "automatic",
+              expected_revision: "initial",
+              actor_id: "user_preparation",
+            }),
+          ).rejects.toThrow("Stripe TEST");
+          expect(resolve).not.toHaveBeenCalled();
+          expect(stripe.requests).toEqual([]);
+        });
+      }
+
+      it("creates one manual transfer through the native provider and replays its durable settlement without new effects", async () => {
+        const value = await createFinanceDurabilityFixture(getContainer(), {
+          withPayoutAccount: true,
+        });
+        if (!value.payoutAccountId)
+          throw new Error("The disposable connected account is missing.");
+        stripe.accounts.set("acct_durabilityseller", {
+          id: "acct_durabilityseller",
+          object: "account",
+          type: "express",
+          country: "US",
+          business_type: "individual",
+          email: null,
+          charges_enabled: true,
+          payouts_enabled: true,
+          details_submitted: true,
+          capabilities: { transfers: "active" },
+          metadata: { account_id: value.payoutAccountId },
+          requirements: {
+            alternatives: [],
+            current_deadline: null,
+            currently_due: [],
+            disabled_reason: null,
+            errors: [],
+            eventually_due: [],
+            past_due: [],
+            pending_verification: [],
+          },
+        });
+        const request = {
+          order_id: value.orderId,
+          actor_id: value.actorId,
+          request_id: randomUUID(),
+          note: "Manual native transfer in the isolated offline regression",
+        };
+        const { result } = await settleOrderFinanceWorkflow(getContainer()).run(
+          { input: request },
+        );
+        expect(result).toMatchObject({
+          linked: true,
+          transfer_attempted: true,
+          transfer_id: "tr_durability",
+          plan: {
+            mode,
+            amount: 64.4,
+            currency_code: "usd",
+            platform_account_id: "acct_durabilityplatform",
+            account_id: value.payoutAccountId,
+            destination: "acct_durabilityseller",
+          },
+        });
+        const transfers = stripe.requests.filter(
+          (entry) => entry.method === "POST" && entry.path === "/v1/transfers",
+        );
+        expect(transfers).toHaveLength(1);
+        const body = new URLSearchParams(transfers[0].body);
+        expect(Object.fromEntries(body)).toMatchObject({
+          amount: "6440",
+          currency: "usd",
+          destination: "acct_durabilityseller",
+          source_transaction: "ch_durability",
+          transfer_group: "group_pi_durability",
+          "metadata[finance_operation_id]": `payout:${value.orderId}`,
+          "metadata[group_id]": value.groupId,
+          "metadata[order_id]": value.orderId,
+          "metadata[seller_id]": value.sellerId,
+        });
+        const idempotency = Object.entries(transfers[0].headers).find(
+          ([key]) => key.toLowerCase() === "idempotency-key",
+        )?.[1];
+        expect(idempotency).toBe(
+          `order-finance:payout:${value.orderId}:transfer`,
+        );
+        const current = await read(value);
+        expect(current.payout).toMatchObject({
+          id: result.payout_id,
+          status: "paid",
+          account_id: value.payoutAccountId,
+        });
+        expect(financeAmount(current.payout!.amount)).toBe(64.4);
+        const facts = async () =>
+          (
+            await journal().listFinanceProviderFacts({
+              group_id: value.groupId,
+              mode,
+            })
+          )
+            .map((entry) => providerFinanceFactSchema.parse(entry.fact))
+            .sort((a, b) => a.key.localeCompare(b.key));
+        const beforeFacts = await facts();
+        expect(beforeFacts.map((fact) => fact.key)).toEqual([
+          `stripe:${mode}:acct_durabilityplatform:capture:ch_durability`,
+          `stripe:${mode}:acct_durabilityplatform:transfer:tr_durability`,
+        ]);
+        expect(beforeFacts[1]).toMatchObject({
+          mode,
+          amount_minor: 6440,
+          account_id: "acct_durabilityplatform",
+          order_id: value.orderId,
+          seller_id: value.sellerId,
+        });
+        const posts = stripe.requests.filter(
+          (entry) => entry.method === "POST",
+        ).length;
+        expect(
+          (
+            await settleOrderFinanceWorkflow(getContainer()).run({
+              input: request,
+            })
+          ).result,
+        ).toEqual(result);
+        await refreshOrderFinanceProviderFactsWorkflow(getContainer()).run({
+          input: {
+            order_id: value.orderId,
+            actor_id: value.actorId,
+            group_id: value.groupId,
+            cart_id: value.cartId,
+            reason:
+              "Verify the same persisted transfer facts without another effect",
+          },
+        });
+        expect((await facts()).map((fact) => fact.key)).toEqual(
+          beforeFacts.map((fact) => fact.key),
+        );
+        expect(
+          stripe.requests.filter((entry) => entry.method === "POST"),
+        ).toHaveLength(posts);
+        expect(stripe.state).toMatchObject({
+          transferCreates: 1,
+          captureCalls: 1,
+          refundCreates: 0,
+          reversalCreates: 0,
+        });
+        const payouts = await dbConnection.raw(
+          "select id from payout where deleted_at is null",
+        );
+        expect(payouts.rows).toEqual([{ id: result.payout_id }]);
+      });
 
       it("aftersales rejects raw Store returns, unauthenticated access, other buyers, unowned orders and injected financial actions over HTTP", async () => {
         const value = await fixture();
@@ -1575,8 +1789,8 @@ if (!enabled) {
         };
         const persistedFacts = async () => {
           const result = await dbConnection.raw(
-            "select id, fact from finance_provider_fact where group_id = ? and deleted_at is null order by id",
-            [value.groupId],
+            "select id, fact from finance_provider_fact where group_id = ? and mode = ? and deleted_at is null order by id",
+            [value.groupId, mode],
           );
           return z
             .array(
@@ -1634,6 +1848,9 @@ if (!enabled) {
           expect(new Set(attemptIds).size).toBe(run);
           expect(result.sources.facts).toHaveLength(1);
           expect(result.sources.facts[0]).toMatchObject({
+            mode,
+            key: `stripe:${mode}:acct_durabilityplatform:capture:${value.chargeId}`,
+            data_kind: livemode ? "ordinary" : "qa_fixture",
             kind: "capture",
             group_id: value.groupId,
             provider_id: value.chargeId,
@@ -1701,7 +1918,44 @@ if (!enabled) {
             refundCreates: 0,
             reversalCreates: 0,
           });
+          if (run === 1) {
+            const oppositeMode = mode === "test" ? "live" : "test";
+            const opposite = {
+              ...result.sources.facts[0],
+              key: result.sources.facts[0].key.replace(
+                `stripe:${mode}:`,
+                `stripe:${oppositeMode}:`,
+              ),
+              mode: oppositeMode,
+              amount_minor: 9999,
+              data_kind: oppositeMode === "test" ? "qa_fixture" : "ordinary",
+            } as const;
+            await journal().recordProviderObservation({
+              facts: [opposite],
+              costs: [],
+              coverage: result.sources.coverage,
+            });
+            const readStart = stripe.requests.length;
+            const local = await inspectOrderFinanceProviderFacts(
+              getContainer(),
+              request,
+            );
+            expect(local.sources.facts).toHaveLength(1);
+            expect(local.sources.facts[0]).toMatchObject({
+              mode,
+              amount_minor: 10_000,
+            });
+            expect(stripe.requests).toHaveLength(readStart);
+          }
         }
+        const namespaces = await dbConnection.raw(
+          "select mode, count(*)::integer as count from finance_provider_fact where group_id = ? and deleted_at is null group by mode order by mode",
+          [value.groupId],
+        );
+        expect(namespaces.rows).toEqual([
+          { mode: "live", count: 1 },
+          { mode: "test", count: 1 },
+        ]);
         expect(stripe.requests.slice(requestStart).length).toBeGreaterThan(0);
         expect(
           stripe.requests

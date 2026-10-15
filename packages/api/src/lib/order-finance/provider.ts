@@ -1,9 +1,10 @@
+import { assertStripePlatformAccount, isStripeLivemode } from "../stripe-mode";
 import { MathBN, MedusaError } from "@medusajs/framework/utils";
 import { createStripeClient } from "../stripe-client";
 import { getStripeConnectConfiguration } from "../stripe-connect-configuration";
 import { readStripeFactPages } from "./provider-facts";
 
-export function financeStripeClient() {
+function financeConfiguration() {
   const configuration = getStripeConnectConfiguration();
   if (!configuration)
     throw new MedusaError(
@@ -15,11 +16,30 @@ export function financeStripeClient() {
       MedusaError.Types.NOT_ALLOWED,
       "Las liquidaciones automáticas deben permanecer desactivadas hasta completar la conciliación de reembolsos.",
     );
+  return configuration;
+}
+
+/** Legacy operational QA uses this synchronous factory in TEST only. */
+export function financeStripeClient() {
+  const configuration = financeConfiguration();
+  if (configuration.mode !== "test")
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "LIVE finance requires a verified platform client.",
+    );
   return createStripeClient(configuration.apiKey);
 }
 
+export async function verifiedFinanceStripeClient() {
+  const configuration = financeConfiguration();
+  const stripe = createStripeClient(configuration.apiKey);
+  const account = await stripe.accounts.retrieveCurrent();
+  assertStripePlatformAccount(account.id);
+  return stripe;
+}
+
 export async function readFinanceProvider(paymentIntentId: string) {
-  const stripe = financeStripeClient();
+  const stripe = await verifiedFinanceStripeClient();
   const [intent, refunds] = await Promise.all([
     stripe.paymentIntents.retrieve(paymentIntentId),
     readStripeFactPages(
@@ -33,7 +53,7 @@ export async function readFinanceProvider(paymentIntentId: string) {
     ),
   ]);
   if (
-    intent.livemode ||
+    !isStripeLivemode(intent.livemode) ||
     intent.currency !== "usd" ||
     !refunds.complete ||
     refunds.data.some((refund) => refund.status !== "succeeded")

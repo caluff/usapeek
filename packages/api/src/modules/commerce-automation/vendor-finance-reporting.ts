@@ -3,6 +3,7 @@ import type { EntityManager } from "@medusajs/framework/mikro-orm/knex";
 import { MedusaError } from "@medusajs/framework/utils";
 import { z } from "@medusajs/framework/zod";
 import { sellerReportingSourcesSchema } from "../../lib/order-finance/reporting-sources";
+import { getStripeMode, stripeModeSchema } from "../../lib/stripe-mode";
 
 export const REPORTING_DISCOVERY_ID = "vendor-finance-reporting-discovery";
 export const MAX_VENDOR_REPORTING_ORDERS = 2_000;
@@ -22,6 +23,7 @@ export const reportingReferenceSchema = z.object({
 });
 export type ReportingReference = z.infer<typeof reportingReferenceSchema>;
 export const reportingSourceSchema = reportingReferenceSchema.extend({
+  mode: stripeModeSchema,
   source_revision: z.string(),
   invalidation_token: z.string().nullable(),
   unsafe: z.boolean(),
@@ -41,27 +43,31 @@ function database(manager: EntityManager) {
   return manager.getTransactionContext() ?? manager.getKnex();
 }
 
+function discoveryId() {
+  return getStripeMode() === "test" ? REPORTING_DISCOVERY_ID : `${REPORTING_DISCOVERY_ID}:live`;
+}
+
 // This registry covers every financial original, including orders never completed.
 // Thin native discovery adds historical orders without originals, so those remain partial.
 const SCOPE_SQL = `select p.id, p.seller_id, p.group_id, p.cart_id, p.native_revision,
   p.order_display_id, p.order_custom_display_id, p.source_revision,
-  p.invalidation_token, p.evaluated_token, p.refreshed_at, p.sources
-  from vendor_finance_reporting_projection p where p.deleted_at is null
+  p.invalidation_token, p.evaluated_token, p.refreshed_at, p.sources, p.mode
+  from vendor_finance_reporting_projection p where p.deleted_at is null and p.mode = (select mode from selected_mode)
   union all
   select a.id, a.seller_id, a.group_id, a.cart_id, null::text, null::integer, null::text,
-    null::text, null::text, null::text, null::timestamptz, null::jsonb
+    null::text, null::text, null::text, null::timestamptz, null::jsonb, (select mode from selected_mode)
   from finance_sale_snapshot a where a.deleted_at is null
-    and not exists (select 1 from vendor_finance_reporting_projection p where p.id = a.id and p.deleted_at is null)`;
+    and not exists (select 1 from vendor_finance_reporting_projection p where p.id = a.id)`;
 
 // Hash semantic contents too: same timestamp is not proof that a journal is unchanged.
-const REVISION_SQL = `md5(concat_ws('|', c.id, c.seller_id, c.group_id, c.cart_id, c.native_revision,
+const REVISION_SQL = `md5(concat_ws('|', c.id, c.seller_id, c.group_id, c.cart_id, c.native_revision, c.mode,
   s.updated_at::text, s.cart_id, s.active_token, s.review_required::text, s.observation::text,
   (select string_agg(a.id || ':' || a.seller_id || ':' || a.updated_at::text || ':' || a.original::text, '|' order by a.id)
     from finance_sale_snapshot a where a.group_id = c.group_id and a.deleted_at is null),
   (select string_agg(o.id || ':' || o.state || ':' || o.updated_at::text || ':' || coalesce(o.result::text, ''), '|' order by o.id)
     from commerce_operation o where o.group_id = c.group_id and o.deleted_at is null),
   (select string_agg(f.id || ':' || f.updated_at::text || ':' || f.fact::text, '|' order by f.id)
-    from finance_provider_fact f where f.group_id = c.group_id and f.deleted_at is null)))`;
+    from finance_provider_fact f where f.group_id = c.group_id and f.mode = c.mode and f.deleted_at is null)))`;
 const SOURCE_SQL = `select c.*, ${REVISION_SQL} as current_source_revision,
   coalesce(s.cart_id <> c.cart_id or s.active_token is not null or s.review_required
     or (s.observation->'finance_execution_writers' is not null
@@ -75,7 +81,7 @@ export async function readReportingDiscovery(
   manager: EntityManager,
 ): Promise<ReportingDiscovery> {
   const row = await database(manager)("commerce_scan")
-    .where({ id: REPORTING_DISCOVERY_ID })
+    .where({ id: discoveryId() })
     .whereNull("deleted_at")
     .first("position");
   if (!row?.position) return { cursor: null, complete: false };
@@ -95,11 +101,11 @@ export async function readVendorReportingRegistry(
     .parse(input);
   // Discovery state and rows are read in the same SQL snapshot.
   const result = await database(manager).raw(
-    `with scoped as (${SOURCE_SQL} where c.seller_id = ?),
+    `with selected_mode as (select ?::text as mode), scoped as (${SOURCE_SQL} where c.seller_id = ?),
     page as (select * from scoped order by id limit ?)
     select coalesce((select jsonb_agg(page order by id) from page), '[]'::jsonb) as rows,
       (select position from commerce_scan where id = ? and deleted_at is null) as discovery`,
-    [parsed.seller_id, MAX_VENDOR_REPORTING_ORDERS + 1, REPORTING_DISCOVERY_ID],
+    [getStripeMode(), parsed.seller_id, MAX_VENDOR_REPORTING_ORDERS + 1, discoveryId()],
   );
   const rows = result.rows[0].rows as Array<Record<string, unknown>>;
   return {
@@ -123,10 +129,10 @@ export async function listDirtyReportingGroups(
   now: Date,
 ): Promise<string[]> {
   const result = await database(manager).raw(
-    `with scoped as (${SOURCE_SQL})
+    `with selected_mode as (select ?::text as mode), scoped as (${SOURCE_SQL})
     select group_id from scoped where not is_fresh or refreshed_at < ?::timestamptz - interval '10 minutes'
     group by group_id order by bool_and(is_fresh), min(coalesce(refreshed_at, '1970-01-01'::timestamptz)), group_id limit 1`,
-    [now],
+    [getStripeMode(), now],
   );
   return z
     .array(z.object({ group_id: z.string() }))
@@ -139,9 +145,9 @@ export async function readReportingGroupSource(
   groupId: string,
 ): Promise<ReportingSource[]> {
   const result = await database(manager).raw(
-    `with scoped as (${SOURCE_SQL} where c.group_id = ?)
+    `with selected_mode as (select ?::text as mode), scoped as (${SOURCE_SQL} where c.group_id = ?)
     select *, current_source_revision as source_revision from scoped order by id`,
-    [groupId],
+    [getStripeMode(), groupId],
   );
   return reportingSourceSchema.array().parse(result.rows);
 }
@@ -155,6 +161,7 @@ export async function registerReportingReferences(
     .parse(references)
     .sort((left, right) => left.id.localeCompare(right.id));
   if (!parsed.length) return;
+  const mode = getStripeMode();
   if (new Set(parsed.map((row) => row.id)).size !== parsed.length)
     throw new MedusaError(
       MedusaError.Types.CONFLICT,
@@ -187,6 +194,7 @@ export async function registerReportingReferences(
     if (
       existing &&
       (existing.seller_id !== row.seller_id ||
+        existing.mode !== mode ||
         existing.group_id !== row.group_id ||
         existing.cart_id !== row.cart_id ||
         existing.deleted_at)
@@ -204,7 +212,7 @@ export async function registerReportingReferences(
       continue;
     changed.push({
       ...row,
-      mode: "test",
+      mode,
       currency_code: "usd",
       invalidation_token: randomUUID(),
       created_at: new Date(),
@@ -223,7 +231,8 @@ export async function registerReportingReferences(
         "updated_at",
       ])
       .whereRaw(
-        `vendor_finance_reporting_projection.seller_id = excluded.seller_id
+        `vendor_finance_reporting_projection.mode = excluded.mode
+        and vendor_finance_reporting_projection.seller_id = excluded.seller_id
         and vendor_finance_reporting_projection.group_id = excluded.group_id
         and vendor_finance_reporting_projection.cart_id = excluded.cart_id
         and vendor_finance_reporting_projection.deleted_at is null`,
@@ -247,7 +256,7 @@ export async function saveReportingDiscovery(
 ): Promise<boolean> {
   await database(manager)("commerce_scan")
     .insert({
-      id: REPORTING_DISCOVERY_ID,
+      id: discoveryId(),
       position: JSON.stringify({ cursor: null, complete: false }),
       created_at: new Date(),
       updated_at: new Date(),
@@ -255,7 +264,7 @@ export async function saveReportingDiscovery(
     .onConflict("id")
     .ignore();
   await database(manager)("commerce_scan")
-    .where({ id: REPORTING_DISCOVERY_ID })
+    .where({ id: discoveryId() })
     .forUpdate()
     .first();
   const current = await readReportingDiscovery(manager);
@@ -266,7 +275,7 @@ export async function saveReportingDiscovery(
     return false;
   await registerReportingReferences(manager, input.references);
   await database(manager)("commerce_scan")
-    .where({ id: REPORTING_DISCOVERY_ID })
+    .where({ id: discoveryId() })
     .update({
       position: JSON.stringify(discoverySchema.parse(input.next)),
       updated_at: new Date(),
@@ -291,7 +300,7 @@ export async function invalidateReportingRegistry(
       .insert(
         originals.map((row: Record<string, unknown>) => ({
           ...row,
-          mode: "test",
+          mode: getStripeMode(),
           currency_code: "usd",
           created_at: new Date(),
           updated_at: new Date(),
@@ -301,11 +310,13 @@ export async function invalidateReportingRegistry(
       .ignore();
   await database(manager)("vendor_finance_reporting_projection")
     .whereIn("id", ids)
+    .where({ mode: getStripeMode() })
     .orderBy("id")
     .forUpdate()
     .select("id");
   await database(manager)("vendor_finance_reporting_projection")
     .whereIn("id", ids)
+    .where({ mode: getStripeMode() })
     .update({ invalidation_token: randomUUID(), updated_at: new Date() });
 }
 
@@ -318,8 +329,9 @@ export async function saveReportingGroupProjection(
   },
 ): Promise<boolean> {
   const expected = reportingSourceSchema.array().parse(input.source);
+  const mode = getStripeMode();
   if (
-    !expected.length ||
+    !expected.length || expected.some((row) => row.mode !== mode) ||
     expected.length !== input.projections.length ||
     new Set(input.projections.map((row) => row.id)).size !== expected.length
   )
@@ -345,7 +357,7 @@ export async function saveReportingGroupProjection(
       .insert(
         originals.map((row: Record<string, unknown>) => ({
           ...row,
-          mode: "test",
+          mode: getStripeMode(),
           currency_code: "usd",
           created_at: new Date(),
           updated_at: new Date(),
@@ -354,7 +366,7 @@ export async function saveReportingGroupProjection(
       .onConflict("id")
       .ignore();
   await database(manager)("vendor_finance_reporting_projection")
-    .where({ group_id: groupId })
+    .where({ group_id: groupId, mode })
     .orderBy("id")
     .forUpdate()
     .select("id");
@@ -380,8 +392,10 @@ export async function saveReportingGroupProjection(
       );
     const sources = sellerReportingSourcesSchema.parse(projection.sources);
     if (
+      sources.costs.some((cost) => cost.mode !== mode) ||
       sources.facts.some(
         (fact) =>
+          fact.mode !== mode ||
           fact.order_id !== row.id ||
           fact.seller_id !== row.seller_id ||
           fact.group_id !== row.group_id,
@@ -411,7 +425,7 @@ export async function saveReportingGroupProjection(
       seller_id: row.seller_id,
       group_id: row.group_id,
       cart_id: row.cart_id,
-      mode: "test",
+      mode,
       currency_code: "usd",
       sources: JSON.stringify(projection.sources),
       source_revision: row.source_revision,
@@ -421,7 +435,7 @@ export async function saveReportingGroupProjection(
       created_at: new Date(),
     };
   });
-  await database(manager)("vendor_finance_reporting_projection")
+  const saved = await database(manager)("vendor_finance_reporting_projection")
     .insert(columns)
     .onConflict("id")
     .merge([
@@ -430,6 +444,12 @@ export async function saveReportingGroupProjection(
       "evaluated_token",
       "refreshed_at",
       "updated_at",
-    ]);
-  return true;
+    ])
+    .whereRaw(`vendor_finance_reporting_projection.mode = excluded.mode
+      and vendor_finance_reporting_projection.seller_id = excluded.seller_id
+      and vendor_finance_reporting_projection.group_id = excluded.group_id
+      and vendor_finance_reporting_projection.cart_id = excluded.cart_id
+      and vendor_finance_reporting_projection.deleted_at is null`)
+    .returning("id");
+  return saved.length === columns.length;
 }

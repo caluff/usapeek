@@ -36,7 +36,6 @@ export default async function DashboardPage({
   const finance = resultOf(
     client.get<VendorFinanceReportingResponse>("/vendor/finance/reporting", {
       period,
-      mode: "test",
       currency_code: "usd",
       data_kind: "ordinary",
     }),

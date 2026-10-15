@@ -6,7 +6,7 @@ import type {
 
 export function readFinanceReport(
   sdk: Medusa,
-  query: FinanceReportingQuery,
+  query: Omit<FinanceReportingQuery, "mode">,
   signal?: AbortSignal,
 ) {
   return sdk.client.fetch<AdminFinanceReportingResponse>(

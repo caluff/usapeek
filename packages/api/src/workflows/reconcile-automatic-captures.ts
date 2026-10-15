@@ -11,6 +11,7 @@ import { COMMERCE_AUTOMATION_MODULE } from "../modules/commerce-automation";
 import type CommerceAutomationService from "../modules/commerce-automation/service";
 import { readPaymentCaptureSettings } from "../lib/order-finance/capture-settings";
 import { capturePreparedPurchase } from "../lib/order-finance/automatic-capture";
+import { getStripeMode } from "../lib/stripe-mode";
 
 const SCAN_ID = "automatic-payment-capture";
 const BATCH_SIZE = 25;
@@ -20,6 +21,7 @@ const groupSchema = z.object({
 });
 
 export async function reconcileAutomaticCaptures(container: MedusaContainer) {
+  if (getStripeMode() !== "test") return;
   if ((await readPaymentCaptureSettings(container)).mode !== "automatic")
     return;
   const journal = container.resolve<CommerceAutomationService>(

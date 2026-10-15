@@ -11,12 +11,11 @@ export function settlementListInput(params: SettlementSearchParams) {
   return {
     page: pagination.page,
     query: {
-      mode: "test",
       currency_code: "usd",
       data_kind: "ordinary",
       limit: pagination.limit,
       offset: pagination.offset,
-    } satisfies VendorSettlementsQuery,
+    } satisfies Omit<VendorSettlementsQuery, "mode">,
   };
 }
 

@@ -15,7 +15,9 @@ import {
 } from "@mercurjs/types";
 import type { PayoutAccountDTO } from "@mercurjs/types";
 import { getStripeConnectConfiguration } from "../stripe-connect-configuration";
+import { getStripeMode, isStripeLivemode, type StripeMode } from "../stripe-mode";
 import { requireVendorAccess } from "../vendor-onboarding/access";
+import { assertNativeStripePlatform } from "./provider-client";
 
 export type StripeAccountVendor = {
   member_id: string;
@@ -133,6 +135,7 @@ export function stripeAccountStatus(
 export function assertStripeAccountBinding(
   account: Stripe.Account,
   local: Pick<PayoutAccountDTO, "id" | "data">,
+  mode: StripeMode = getStripeMode(),
 ) {
   if (
     account.id !== local.data.id ||
@@ -140,7 +143,7 @@ export function assertStripeAccountBinding(
     account.country !== "US" ||
     account.metadata?.account_id !== local.id ||
     ("deleted" in account && account.deleted) ||
-    ("livemode" in account && account.livemode !== false)
+    ("livemode" in account && !isStripeLivemode(account.livemode, mode))
   )
     throw unavailable();
 }
@@ -151,8 +154,7 @@ export async function reconcileStripeAccount(
   input: { payout_account_id: string; vendor?: StripeAccountVendor },
 ): Promise<StripeAccountSummary> {
   const configuration = getStripeConnectConfiguration();
-  if (!configuration || !/^sk_test_[A-Za-z0-9]+$/.test(configuration.apiKey))
-    throw unavailable();
+  if (!configuration) throw unavailable();
   if (!/^pacc_[A-Za-z0-9]+$/.test(input.payout_account_id)) throw unavailable();
   const payout = container.resolve<InstanceType<typeof PayoutModule.service>>(
     MercurModules.PAYOUT,
@@ -190,6 +192,7 @@ export async function reconcileStripeAccount(
     });
     let account: Stripe.Account;
     try {
+      await assertNativeStripePlatform(configuration);
       account = await stripe.accounts.retrieve(stripeId);
     } catch {
       throw new MedusaError(
@@ -197,7 +200,7 @@ export async function reconcileStripeAccount(
         "Stripe account verification could not be completed. Try again manually.",
       );
     }
-    assertStripeAccountBinding(account, local);
+    assertStripeAccountBinding(account, local, configuration.mode);
     const status = stripeAccountStatus(
       account,
       configuration.accountValidation,
@@ -222,7 +225,7 @@ export async function reconcileStripeAccount(
       current.data?.id !== stripeId
     )
       throw unavailable();
-    assertStripeAccountBinding(account, current);
+    assertStripeAccountBinding(account, current, configuration.mode);
     // The native webhook workflow compensates to the previous status. A fresh
     // provider observation must not roll back to stale readiness after failure.
     if (current.status !== status)

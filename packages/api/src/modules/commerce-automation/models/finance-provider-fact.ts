@@ -7,7 +7,7 @@ export const FinanceProviderFact = model
     operation_id: model.text().nullable(),
     order_id: model.text().nullable(),
     seller_id: model.text().nullable(),
-    mode: model.enum(["test"]),
+    mode: model.enum(["test", "live"]),
     account_id: model.text(),
     kind: model.enum([
       "capture",

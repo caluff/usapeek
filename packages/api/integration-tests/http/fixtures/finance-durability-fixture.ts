@@ -78,14 +78,18 @@ export async function createFinanceDurabilityFixture(
   container: MedusaContainer,
   {
     withPayout = false,
+    withPayoutAccount = false,
     paymentState = "captured",
     withPhysicalShipment = false,
     withPhysicalFulfillment = false,
+    livemode = false,
   }: {
     withPayout?: boolean;
+    withPayoutAccount?: boolean;
     paymentState?: "authorized" | "captured";
     withPhysicalShipment?: boolean;
     withPhysicalFulfillment?: boolean;
+    livemode?: boolean;
   } = {},
 ) {
   assert.equal(process.env.NODE_ENV, "test");
@@ -229,7 +233,7 @@ export async function createFinanceDurabilityFixture(
         application_id: `durability-fixture-${id}`,
         operation_id: randomUUID(),
         submission_revision: 1,
-        address: { finance_data_kind: "qa_fixture" },
+        address: { finance_data_kind: livemode ? "ordinary" : "qa_fixture" },
         name: location.name,
         created_location: true,
         state: "ready",
@@ -429,7 +433,7 @@ export async function createFinanceDurabilityFixture(
     data: {},
   });
   assert.equal(session.data.id, "pi_durability");
-  assert.equal(session.data.livemode, false);
+  assert.equal(session.data.livemode, livemode);
   assert.equal(session.data.status, "requires_capture");
   const group = await sellers.createOrderGroups({ cart_id: cart.id });
   await createLinksWorkflow(container).run({
@@ -530,13 +534,15 @@ export async function createFinanceDurabilityFixture(
   }
 
   let transferId: string | undefined;
-  if (withPayout) {
+  let payoutAccountId: string | undefined;
+  if (withPayout || withPayoutAccount) {
     const account = await container
       .resolve<InstanceType<typeof PayoutModule.service>>(MercurModules.PAYOUT)
       .createPayoutAccounts({
         status: PayoutAccountStatus.ACTIVE,
         data: { id: "acct_durabilityseller" },
       });
+    payoutAccountId = account.id;
     await createLinksWorkflow(container).run({
       input: [
         {
@@ -545,29 +551,34 @@ export async function createFinanceDurabilityFixture(
         },
       ],
     });
-    transferId = "tr_durability";
-    const { result: payout } = await recordReconciledPayoutWorkflow(
-      container,
-    ).run({
-      input: {
-        id: `pout_durability_${id.replaceAll("-", "")}`,
-        account_id: account.id,
-        amount: 64.4,
-        currency_code: "usd",
-        status: PayoutStatus.PAID,
-        data: {
-          id: transferId,
-          destination: "acct_durabilityseller",
-          source_transaction: "ch_durability",
-          transfer_group: "group_pi_durability",
-          livemode: false,
-          metadata: { seller_id: target.seller.id, order_id: target.order.id },
+    if (withPayout) {
+      transferId = "tr_durability";
+      const { result: payout } = await recordReconciledPayoutWorkflow(
+        container,
+      ).run({
+        input: {
+          id: `pout_durability_${id.replaceAll("-", "")}`,
+          account_id: account.id,
+          amount: 64.4,
+          currency_code: "usd",
+          status: PayoutStatus.PAID,
+          data: {
+            id: transferId,
+            destination: "acct_durabilityseller",
+            source_transaction: "ch_durability",
+            transfer_group: "group_pi_durability",
+            livemode,
+            metadata: {
+              seller_id: target.seller.id,
+              order_id: target.order.id,
+            },
+          },
         },
-      },
-    });
-    await linkSettlementPayoutWorkflow(container).run({
-      input: { payout_id: payout.id, seller_id: target.seller.id },
-    });
+      });
+      await linkSettlementPayoutWorkflow(container).run({
+        input: { payout_id: payout.id, seller_id: target.seller.id },
+      });
+    }
   }
 
   for (const { order, amount } of sales) {
@@ -625,6 +636,7 @@ export async function createFinanceDurabilityFixture(
     paymentIntentId: "pi_durability",
     chargeId: "ch_durability",
     transferId,
+    payoutAccountId,
     itemId: target.order.items![0].id,
     siblingItemId: sibling.order.items![0].id,
     locationId: target.shipping?.locationId,

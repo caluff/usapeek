@@ -1,3 +1,4 @@
+import { isStripeLivemode } from "../lib/stripe-mode";
 import { createHash } from "node:crypto";
 import { hostname } from "node:os";
 import type { MedusaContainer } from "@medusajs/framework/types";
@@ -29,7 +30,7 @@ import {
   DEFAULT_PAYMENT_RELEASE_DELAY_DAYS,
   paymentReleaseDelayDaysSchema,
 } from "../lib/order-finance/contracts";
-import { financeStripeClient } from "../lib/order-finance/provider";
+import { verifiedFinanceStripeClient } from "../lib/order-finance/provider";
 import { readOrderFinance } from "../lib/order-finance/read";
 import { recordOrderFinanceProviderFacts } from "../lib/order-finance/record-provider-facts";
 import {
@@ -316,10 +317,11 @@ async function executeOrderSettlement(
             selector: { id: operationId, token, state: "processing" },
             data: { result },
           });
-          const transfer =
-            await financeStripeClient().transfers.retrieve(transferId);
+          const transfer = await (
+            await verifiedFinanceStripeClient()
+          ).transfers.retrieve(transferId);
           if (
-            transfer.livemode ||
+            !isStripeLivemode(transfer.livemode, plan.mode) ||
             transfer.currency !== plan.currency_code ||
             transfer.destination !== plan.destination ||
             transfer.source_transaction !== plan.source_transaction ||

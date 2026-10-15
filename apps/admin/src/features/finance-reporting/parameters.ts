@@ -8,7 +8,9 @@ export const FINANCE_REPORT_PERIODS = [
 ] as const;
 export const REPORT_PAGE_SIZE = 10;
 
-export function financeReportQuery(period: string | null): FinanceReportingQuery {
+export function financeReportQuery(
+  period: string | null,
+): Omit<FinanceReportingQuery, "mode"> {
   return {
     period: FINANCE_REPORT_PERIODS.includes(
       period as (typeof FINANCE_REPORT_PERIODS)[number],
@@ -16,7 +18,6 @@ export function financeReportQuery(period: string | null): FinanceReportingQuery
       ? (period as FinanceReportingQuery["period"])
       : "last_30_days",
     data_kind: "ordinary",
-    mode: "test",
     currency_code: "usd",
   };
 }

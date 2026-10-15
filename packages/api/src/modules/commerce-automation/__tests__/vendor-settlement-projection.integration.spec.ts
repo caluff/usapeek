@@ -179,6 +179,37 @@ if (!enabled) {
         expect(rows[0].ssl).toBe(true);
       });
 
+      it("isolates mode-bound settlements without changing the other mode's projection", async () => {
+        const priorMode = process.env.STRIPE_MODE;
+        process.env.STRIPE_MODE = "test";
+        try {
+          const testSource = await seed();
+          expect(await save(testSource)).toBe(true);
+          const manager = MikroOrmWrapper.getManager();
+          const before = await manager.execute(
+            "select * from vendor_settlement_projection where id = 'order_own'",
+          );
+          process.env.STRIPE_MODE = "live";
+          expect((await read()).items).toEqual([]);
+          expect(await service.readVendorSettlementGroupSource("group_own")).toEqual([]);
+          expect(await save(testSource)).toBe(false);
+          await service.invalidateVendorSettlements(["order_own"]);
+          expect(await manager.execute(
+            "select * from vendor_settlement_projection where id = 'order_own'",
+          )).toEqual(before);
+
+          const liveSource = await seed(["order_live"], "seller_own", "group_live");
+          expect(liveSource[0].mode).toBe("live");
+          expect(await save(liveSource)).toBe(true);
+          expect((await read()).items.map((row) => row.order_id)).toEqual(["order_live"]);
+          process.env.STRIPE_MODE = "test";
+          expect((await read()).items.map((row) => row.order_id)).toEqual(["order_own"]);
+        } finally {
+          if (priorMode === undefined) delete process.env.STRIPE_MODE;
+          else process.env.STRIPE_MODE = priorMode;
+        }
+      });
+
       it.each([0, 1, 2, 3])(
         "carries the %i-day immutable snapshot into projection sources and vendor dates",
         async (days) => {

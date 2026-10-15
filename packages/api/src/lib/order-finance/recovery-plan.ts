@@ -1,3 +1,8 @@
+import {
+  assertStripePlatformAccount,
+  getStripeMode,
+  isStripeLivemode,
+} from "../stripe-mode";
 import { createHash } from "node:crypto";
 import type { MedusaContainer } from "@medusajs/framework/types";
 import {
@@ -17,7 +22,7 @@ import {
   type FinanceGroup,
 } from "./policy";
 import {
-  financeStripeClient,
+  verifiedFinanceStripeClient,
   readFinanceProvider,
   assertProviderBalances,
 } from "./provider";
@@ -132,6 +137,10 @@ async function inspectPayout(
   const operation = current.operations.find((item) => item.id === operationId)!;
   const result = payoutOperationSchema.parse(operation.result);
   const plan = result.plan;
+  requireRecovery(
+    plan.mode === getStripeMode(),
+    "El modo del plan no coincide con el proveedor configurado.",
+  );
   const original = current.original!;
   const payment = current.group.orders[0].cart.payment_collection.payments[0];
   assertSettlementCapture(current);
@@ -174,7 +183,7 @@ async function inspectPayout(
       ),
     "El saldo de la liquidación cambió.",
   );
-  const stripe = financeStripeClient();
+  const stripe = await verifiedFinanceStripeClient();
   const [platform, balance, provider, transfers] = await Promise.all([
     stripe.accounts.retrieveCurrent(),
     stripe.balance.retrieve(),
@@ -185,8 +194,10 @@ async function inspectPayout(
       group_order_ids: current.group.orders.map((order) => order.id),
     }),
   ]);
+  assertStripePlatformAccount(platform.id);
   requireRecovery(
-    platform.id === plan.platform_account_id && !balance.livemode,
+    platform.id === plan.platform_account_id &&
+      isStripeLivemode(balance.livemode, plan.mode),
     "No se pudo verificar la cuenta o todas las transferencias.",
   );
   assertProviderBalances(
@@ -234,7 +245,7 @@ async function inspectPayout(
   );
   const transfer = transfers[0];
   requireRecovery(
-    !transfer.livemode &&
+    isStripeLivemode(transfer.livemode) &&
       transfer.currency === "usd" &&
       idOf(transfer.destination) === plan.destination &&
       idOf(transfer.source_transaction) === plan.source_transaction &&
@@ -392,14 +403,15 @@ async function inspectRefund(current: RecoveryCurrent, operationId: string) {
     payment.captures.length === 1,
     "La captura local no es inequívoca.",
   );
-  const stripe = financeStripeClient();
+  const stripe = await verifiedFinanceStripeClient();
   const [provider, balance] = await Promise.all([
     readFinanceProvider(payment.data.id),
     stripe.balance.retrieve(),
   ]);
   requireRecovery(
-    !balance.livemode && provider.intent.status === "succeeded",
-    "El cobro no está confirmado en TEST.",
+    isStripeLivemode(balance.livemode) &&
+      provider.intent.status === "succeeded",
+    "El cobro no está confirmado en el modo configurado.",
   );
   const chargeId = idOf(provider.intent.latest_charge);
   requireRecovery(chargeId, "Falta el cargo del cobro.");
@@ -477,7 +489,7 @@ async function inspectRefund(current: RecoveryCurrent, operationId: string) {
   );
   const charge = await stripe.charges.retrieve(chargeId);
   requireRecovery(
-    !charge.livemode &&
+    isStripeLivemode(charge.livemode) &&
       charge.currency === "usd" &&
       idOf(charge.payment_intent) === payment.data.id &&
       charge.captured,
@@ -522,7 +534,7 @@ async function inspectRefund(current: RecoveryCurrent, operationId: string) {
     );
     requireRecovery(
       MathBN.eq(plannedReversal, economics.seller_reversed) &&
-        !transfer.livemode &&
+        isStripeLivemode(transfer.livemode) &&
         transfer.currency === "usd" &&
         [order.id, transferGroup].includes(transfer.transfer_group ?? "") &&
         (!settlement.transfer_group ||
@@ -885,7 +897,7 @@ export async function inspectFinanceRecovery(
     state: operation.state,
     actions: prepared.actions,
     provider: "stripe",
-    mode: "test",
+    mode: getStripeMode(),
     observation,
   };
   const planHash = createHash("sha256")

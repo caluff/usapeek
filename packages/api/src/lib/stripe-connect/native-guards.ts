@@ -5,13 +5,14 @@ import type Stripe from "stripe";
 import { createStripeClient } from "../stripe-client";
 import { validateSellerPayoutAccount } from "@mercurjs/core/api/vendor/payout-accounts/helpers";
 import { getStripeConnectConfiguration } from "../stripe-connect-configuration";
-import { getNativeStripeAccountInput, getNativeStripeOnboardingInput } from "./provider-client";
+import { isStripeLivemode } from "../stripe-mode";
+import { assertNativeStripePlatform, getNativeStripeAccountInput, getNativeStripeOnboardingInput } from "./provider-client";
 
 const MAX_WEBHOOK_BYTES = 256 * 1024;
 const accountEvent = z.object({
   id: z.string().min(1),
   type: z.literal("account.updated"),
-  livemode: z.literal(false),
+  livemode: z.boolean(),
   account: z.string().startsWith("acct_"),
   data: z.object({ object: z.object({
     id: z.string().startsWith("acct_"),
@@ -24,7 +25,7 @@ export async function guardNativeStripeConnect(req: MedusaRequest, sellerId: str
   if (!/^\/vendor\/payout-accounts(?:\/|$)/.test(route) || req.method === "OPTIONS") return;
   const configuration = getStripeConnectConfiguration();
   if (!configuration) {
-    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Stripe Connect test onboarding is not configured.");
+    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Stripe Connect onboarding is not configured.");
   }
   if (!sellerId) throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Seller access is required.");
   if (req.method !== "POST") return;
@@ -40,6 +41,7 @@ export async function guardNativeStripeConnect(req: MedusaRequest, sellerId: str
     await validateSellerPayoutAccount(req.scope, sellerId, decodeURIComponent(match[1]));
     req.body = input;
   }
+  await assertNativeStripePlatform(configuration);
   req.validatedBody = req.body;
 }
 
@@ -70,10 +72,13 @@ export async function nativeStripePayoutWebhookGuard(
     } catch {
       throw new MedusaError(MedusaError.Types.INVALID_DATA, "Stripe webhook verification failed.");
     }
+    if (!isStripeLivemode(verifiedEvent.livemode, configuration.mode)) {
+      throw new MedusaError(MedusaError.Types.INVALID_DATA, "Stripe webhook mode does not match this environment.");
+    }
     if (verifiedEvent.type !== "account.updated") { res.sendStatus(200); return; }
 
     const parsed = accountEvent.safeParse(verifiedEvent);
-    if (!parsed.success) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Invalid Stripe test account event.");
+    if (!parsed.success) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Invalid Stripe account event.");
     const event = parsed.data;
     const account = event.data.object;
     if (event.account !== account.id) {

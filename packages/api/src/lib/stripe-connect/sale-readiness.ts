@@ -3,11 +3,13 @@ import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/util
 import { z } from "@medusajs/framework/zod";
 import { PayoutAccountStatus, SellerStatus } from "@mercurjs/types";
 import { getStripeConnectConfiguration } from "../stripe-connect-configuration";
+import { isStripeLivemode } from "../stripe-mode";
 
 const stripeAccountData = z.object({
   id: z.string().startsWith("acct_").min(6),
   country: z.literal("US"),
   metadata: z.object({ account_id: z.string().min(1) }),
+  livemode: z.boolean().optional(),
 });
 
 function unavailable(): never {
@@ -35,8 +37,9 @@ export async function assertCartSellersReadyForSale(
     if (options.allowCompleted !== false) return;
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "This cart is already completed.");
   }
-  if (!getStripeConnectConfiguration()) {
-    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Stripe test checkout is not configured.");
+  const configuration = getStripeConnectConfiguration();
+  if (!configuration) {
+    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Stripe checkout is not configured.");
   }
   if (cart.currency_code !== "usd") {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Checkout currently supports USD only.");
@@ -65,7 +68,8 @@ export async function assertCartSellersReadyForSale(
     if (
       seller.status !== SellerStatus.OPEN || !account?.id ||
       account.status !== PayoutAccountStatus.ACTIVE || !data.success ||
-      data.data.metadata.account_id !== account.id
+      data.data.metadata.account_id !== account.id ||
+      (data.data.livemode !== undefined && !isStripeLivemode(data.data.livemode, configuration.mode))
     ) unavailable();
     readySellers.add(seller.id);
   }
