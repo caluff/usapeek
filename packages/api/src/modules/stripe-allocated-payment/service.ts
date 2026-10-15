@@ -1,16 +1,38 @@
 import type {
   IPaymentProvider,
+  CancelPaymentInput,
+  CancelPaymentOutput,
+  CapturePaymentInput,
+  CapturePaymentOutput,
+  CreateAccountHolderInput,
+  CreateAccountHolderOutput,
+  UpdateAccountHolderInput,
+  UpdateAccountHolderOutput,
+  DeleteAccountHolderInput,
+  DeleteAccountHolderOutput,
+  SavePaymentMethodInput,
+  SavePaymentMethodOutput,
+  DeletePaymentMethodInput,
+  DeletePaymentMethodOutput,
   InitiatePaymentInput,
   InitiatePaymentOutput,
   ProviderWebhookPayload,
   RefundPaymentInput,
   RefundPaymentOutput,
+  UpdatePaymentInput,
+  UpdatePaymentOutput,
   WebhookActionResult,
 } from "@medusajs/framework/types";
 import { MathBN, MedusaError, PaymentActions } from "@medusajs/framework/utils";
 import { z } from "@medusajs/framework/zod";
 import nativeStripeModule from "@medusajs/medusa/payment-stripe";
 import type Stripe from "stripe";
+import {
+  assertStripePlatformAccount,
+  getStripeApiKeyMode,
+  getStripeMode,
+  isStripeLivemode,
+} from "../../lib/stripe-mode";
 
 export const FINAL_CAPTURE_OPERATION_METADATA =
   "marketplace_final_capture_operation_id";
@@ -25,11 +47,26 @@ const RESERVED_INITIATION_METADATA = [
 
 // The installed module exports its provider constructors, but not their types.
 // This boundary describes the native signature-verification method we reuse.
-type NativeStripeProvider = IPaymentProvider & {
+interface NativeStripeProvider extends IPaymentProvider {
+  createAccountHolder(
+    input: CreateAccountHolderInput,
+  ): Promise<CreateAccountHolderOutput>;
+  updateAccountHolder(
+    input: UpdateAccountHolderInput,
+  ): Promise<UpdateAccountHolderOutput>;
+  deleteAccountHolder(
+    input: DeleteAccountHolderInput,
+  ): Promise<DeleteAccountHolderOutput>;
+  savePaymentMethod(
+    input: SavePaymentMethodInput,
+  ): Promise<SavePaymentMethodOutput>;
+  deletePaymentMethod(
+    input: DeletePaymentMethodInput,
+  ): Promise<DeletePaymentMethodOutput>;
   constructWebhookEvent(data: ProviderWebhookPayload["payload"]): Stripe.Event;
   stripe_: Stripe;
   readonly options: { apiKey: string };
-};
+}
 type NativeStripeConstructor = {
   new (
     container: Record<string, unknown>,
@@ -113,6 +150,104 @@ export function financeCheckoutDataKind(
 export default class StripeAllocatedPaymentService extends NativeStripeService {
   static identifier = "stripe";
 
+  private stripeMode() {
+    const mode = getStripeApiKeyMode(this.options.apiKey);
+    if (
+      mode !== getStripeMode() ||
+      (mode === "live" && process.env.STRIPE_LIVE_ENABLED !== "true")
+    )
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "The Stripe payment provider is disabled or belongs to another mode.",
+      );
+    return mode;
+  }
+
+  private async verifyPlatform() {
+    if (this.stripeMode() !== "live" && !process.env.STRIPE_ACCOUNT_ID?.trim())
+      return;
+    const platform = await this.stripe_.accounts.retrieveCurrent();
+    assertStripePlatformAccount(platform.id);
+  }
+
+  private assertPaymentMode(data: Record<string, unknown> | undefined) {
+    // Preserve native indeterminate responses, which do not contain an intent.
+    if (
+      data &&
+      "livemode" in data &&
+      !isStripeLivemode(data.livemode, this.stripeMode())
+    )
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "The Stripe payment belongs to another mode.",
+      );
+  }
+
+  override async createAccountHolder(
+    input: CreateAccountHolderInput,
+  ): Promise<CreateAccountHolderOutput> {
+    await this.verifyPlatform();
+    return super.createAccountHolder(input);
+  }
+
+  override async updateAccountHolder(
+    input: UpdateAccountHolderInput,
+  ): Promise<UpdateAccountHolderOutput> {
+    await this.verifyPlatform();
+    return super.updateAccountHolder(input);
+  }
+
+  override async deleteAccountHolder(
+    input: DeleteAccountHolderInput,
+  ): Promise<DeleteAccountHolderOutput> {
+    await this.verifyPlatform();
+    return super.deleteAccountHolder(input);
+  }
+
+  override async savePaymentMethod(
+    input: SavePaymentMethodInput,
+  ): Promise<SavePaymentMethodOutput> {
+    await this.verifyPlatform();
+    return super.savePaymentMethod(input);
+  }
+
+  override async deletePaymentMethod(
+    input: DeletePaymentMethodInput,
+  ): Promise<DeletePaymentMethodOutput> {
+    await this.verifyPlatform();
+    return super.deletePaymentMethod(input);
+  }
+
+  override async capturePayment(
+    input: CapturePaymentInput,
+  ): Promise<CapturePaymentOutput> {
+    await this.verifyPlatform();
+    this.assertPaymentMode(input.data);
+    const result = await super.capturePayment(input);
+    this.assertPaymentMode(result.data);
+    return result;
+  }
+
+  override async cancelPayment(
+    input: CancelPaymentInput,
+  ): Promise<CancelPaymentOutput> {
+    await this.verifyPlatform();
+    this.assertPaymentMode(input.data);
+    const result = await super.cancelPayment(input);
+    this.assertPaymentMode(result.data);
+    return result;
+  }
+
+  override async updatePayment(
+    input: UpdatePaymentInput,
+  ): Promise<UpdatePaymentOutput> {
+    await this.verifyPlatform();
+    this.assertPaymentMode(input.data);
+    const result = await super.updatePayment(input);
+    this.assertPaymentMode(result.data);
+    return result;
+  }
+
   override async initiatePayment(
     input: InitiatePaymentInput,
   ): Promise<InitiatePaymentOutput> {
@@ -141,7 +276,8 @@ export default class StripeAllocatedPaymentService extends NativeStripeService {
     }
     // Capture mode and classification are owned by the server. Native initiation
     // preserves session ID, provider normalization, retries and status handling.
-    return super.initiatePayment({
+    await this.verifyPlatform();
+    const result = await super.initiatePayment({
       ...input,
       data: {
         ...input.data,
@@ -149,11 +285,15 @@ export default class StripeAllocatedPaymentService extends NativeStripeService {
         metadata: { ...metadata, finance_data_kind: kind },
       },
     });
+    this.assertPaymentMode(result.data);
+    return result;
   }
 
   override async refundPayment(
     input: RefundPaymentInput,
   ): Promise<RefundPaymentOutput> {
+    await this.verifyPlatform();
+    this.assertPaymentMode(input.data);
     // The payment-module patch transports persisted Refund metadata separately
     // from provider data, retaining the native refund ID as its idempotency key.
     const context = z
@@ -172,7 +312,7 @@ export default class StripeAllocatedPaymentService extends NativeStripeService {
       return super.refundPayment(input);
     }
     const parsed = refundMetadataSchema.safeParse(metadata);
-    if (!parsed.success || !this.options.apiKey.startsWith("sk_test_")) {
+    if (!parsed.success) {
       throw refundReconciliationError();
     }
     const financial = parsed.data;
@@ -190,7 +330,7 @@ export default class StripeAllocatedPaymentService extends NativeStripeService {
     const chargeId = stripeReference(intent.latest_charge);
     if (
       intent.id !== intentId ||
-      intent.livemode ||
+      !isStripeLivemode(intent.livemode, this.stripeMode()) ||
       intent.currency !== "usd" ||
       intent.status !== "succeeded" ||
       !chargeId ||
@@ -201,7 +341,7 @@ export default class StripeAllocatedPaymentService extends NativeStripeService {
     const charge = await this.stripe_.charges.retrieve(chargeId);
     if (
       charge.id !== chargeId ||
-      charge.livemode ||
+      !isStripeLivemode(charge.livemode, this.stripeMode()) ||
       !charge.paid ||
       !charge.captured ||
       charge.status !== "succeeded" ||
@@ -294,12 +434,22 @@ export default class StripeAllocatedPaymentService extends NativeStripeService {
     webhookData: ProviderWebhookPayload["payload"],
   ): Promise<WebhookActionResult> {
     const event = this.constructWebhookEvent(webhookData);
+    const mode = this.stripeMode();
+    const object = event.data.object;
+    if (
+      !isStripeLivemode(event.livemode, mode) ||
+      ("livemode" in object && !isStripeLivemode(object.livemode, mode)) ||
+      (event.type.startsWith("payment_intent.") && !("livemode" in object))
+    )
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "The Stripe webhook mode does not match this payment provider.",
+      );
     if (event.type === "payment_intent.succeeded") {
       const intent = event.data.object;
       const operationId = intent.metadata?.[FINAL_CAPTURE_OPERATION_METADATA];
       if (
-        event.livemode === false &&
-        intent.livemode === false &&
+        isStripeLivemode(intent.livemode, mode) &&
         intent.status === "succeeded" &&
         typeof operationId === "string" &&
         operationId.trim().length > 0

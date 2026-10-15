@@ -120,7 +120,7 @@ export async function recoverOrderFinance(
             requireRecovery(plan.account_id, "Falta la cuenta congelada.");
             let payout = prepared.payout;
             if (!payout) {
-              const id = `payout_reconciled_${createHash("sha256").update(`stripe:test:${plan.platform_account_id}:${transfer.id}`).digest("hex").slice(0, 32)}`;
+              const id = `payout_reconciled_${createHash("sha256").update(`stripe:${plan.mode}:${plan.platform_account_id}:${transfer.id}`).digest("hex").slice(0, 32)}`;
               const { result: adopted } = await recordReconciledPayoutWorkflow(
                 container,
               ).run({

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { MedusaContainer } from "@medusajs/framework/types";
+import { getStripeMode } from "../stripe-mode";
 import { readPaymentCaptureSettings } from "./capture-settings";
 import { readOrderFinance } from "./read";
 import { operateOrderFinanceWorkflow } from "../../workflows/operate-order-finance";
@@ -15,6 +16,7 @@ export async function capturePreparedPurchase(
   container: MedusaContainer,
   orderId: string,
 ) {
+  if (getStripeMode() !== "test") return "manual";
   const settings = await readPaymentCaptureSettings(container);
   if (settings.mode !== "automatic" || !settings.actor_id) return "manual";
   const current = await readOrderFinance(container, orderId, {

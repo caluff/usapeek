@@ -1,3 +1,4 @@
+import { isStripeLivemode } from "../stripe-mode";
 import { cancelOrderWorkflow } from "@medusajs/core-flows";
 import type { MedusaContainer } from "@medusajs/framework/types";
 import { MathBN, MedusaError } from "@medusajs/framework/utils";
@@ -17,11 +18,14 @@ import {
 } from "./policy";
 import {
   assertProviderBalances,
-  financeStripeClient,
+  verifiedFinanceStripeClient,
   readFinanceProvider,
 } from "./provider";
 import { readOrderFinance } from "./read";
-import { freezeFinalCaptureAllocation, splitFinalOrderCapture } from "../../workflows/steps/split-final-order-capture";
+import {
+  freezeFinalCaptureAllocation,
+  splitFinalOrderCapture,
+} from "../../workflows/steps/split-final-order-capture";
 import { CAPTURE_ALLOCATION_METADATA_KEY } from "./native-payments";
 
 type Current = Awaited<ReturnType<typeof readOrderFinance>>;
@@ -111,27 +115,27 @@ function missingCapture(
 
 async function authorizationProvider(current: Current) {
   const payment = current.group.orders[0].cart.payment_collection.payments[0];
-  const stripe = financeStripeClient();
+  const stripe = await verifiedFinanceStripeClient();
   const [provider, balance] = await Promise.all([
     readFinanceProvider(payment.data.id),
     stripe.balance.retrieve(),
   ]);
   const intent = provider.intent;
   requireEvidence(
-    !balance.livemode &&
-      !intent.livemode &&
+    isStripeLivemode(balance.livemode) &&
+      isStripeLivemode(intent.livemode) &&
       intent.id === payment.data.id &&
       intent.currency === "usd" &&
       intent.capture_method === "manual" &&
       intent.amount === minor(payment.amount),
-    "El proveedor no confirma la autorización compartida en USD y TEST.",
+    "El proveedor no confirma la autorización compartida en USD y el modo configurado.",
   );
   const chargeId = referenceId(intent.latest_charge);
   const charge = chargeId ? await stripe.charges.retrieve(chargeId) : null;
   if (charge)
     requireEvidence(
       charge.id === chargeId &&
-        !charge.livemode &&
+        isStripeLivemode(charge.livemode) &&
         charge.currency === "usd" &&
         referenceId(charge.payment_intent) === intent.id &&
         charge.amount === intent.amount,
@@ -183,7 +187,7 @@ export async function inspectAuthorizationRecovery(
     payment &&
       collection.payments.length === 1 &&
       payment.provider_id === "pp_stripe_stripe" &&
-      !payment.data.livemode &&
+      isStripeLivemode(payment.data.livemode) &&
       current.allocation.payment_id === payment.id &&
       current.allocation.currency_code === "usd" &&
       current.group.orders.every(
@@ -431,10 +435,23 @@ export async function executeAuthorizationRecovery(
   const { current, prepared } = input;
   const result = structuredClone(prepared.result);
   if (result.action === "capture") {
-    const useNativeSplit = current.nativeSplit ||
-      current.group.orders[0].cart.payment_collection.metadata?.[CAPTURE_ALLOCATION_METADATA_KEY] !== undefined ||
-      current.group.orders.every((order) => !order.transactions.some((transaction) => transaction.reference === "capture"));
-    if (useNativeSplit) await freezeFinalCaptureAllocation(container, current, prepared.capture_orders);
+    const useNativeSplit =
+      current.nativeSplit ||
+      current.group.orders[0].cart.payment_collection.metadata?.[
+        CAPTURE_ALLOCATION_METADATA_KEY
+      ] !== undefined ||
+      current.group.orders.every(
+        (order) =>
+          !order.transactions.some(
+            (transaction) => transaction.reference === "capture",
+          ),
+      );
+    if (useNativeSplit)
+      await freezeFinalCaptureAllocation(
+        container,
+        current,
+        prepared.capture_orders,
+      );
     let captureId = prepared.capture_id;
     if (prepared.actions.includes("adopt_capture")) {
       const { result: updated } = await recordFinalCaptureWorkflow(
@@ -464,21 +481,27 @@ export async function executeAuthorizationRecovery(
       result.capture_attempted = true;
       await input.checkpoint(result);
     }
-    if (useNativeSplit) await splitFinalOrderCapture(container, {
-      current, orders: prepared.capture_orders, captureId, actorId: input.actor_id, token: input.token,
-    });
-    else for (const part of prepared.capture_orders) {
-      if (!prepared.missing_capture_orders.includes(part.order_id)) continue;
-      await recordAllocatedRefundWorkflow(container).run({
-        input: {
-          order_id: part.order_id,
-          amount: financeAmount(part.amount),
-          currency_code: "usd",
-          reference: "capture",
-          reference_id: captureId,
-        },
+    if (useNativeSplit)
+      await splitFinalOrderCapture(container, {
+        current,
+        orders: prepared.capture_orders,
+        captureId,
+        actorId: input.actor_id,
+        token: input.token,
       });
-    }
+    else
+      for (const part of prepared.capture_orders) {
+        if (!prepared.missing_capture_orders.includes(part.order_id)) continue;
+        await recordAllocatedRefundWorkflow(container).run({
+          input: {
+            order_id: part.order_id,
+            amount: financeAmount(part.amount),
+            currency_code: "usd",
+            reference: "capture",
+            reference_id: captureId,
+          },
+        });
+      }
     if (prepared.actions.includes("record_final_capture")) {
       await current.journal.observeGroup(
         current.group.id,

@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { parseISO } from "date-fns/parseISO";
 import { isValid } from "date-fns/isValid";
 import { paymentReleaseDelayDaysSchema } from "../../lib/order-finance/contracts";
+import { getStripeMode, stripeModeSchema } from "../../lib/stripe-mode";
 
 const instant = z
   .union([z.date(), z.iso.datetime({ offset: true })])
@@ -40,6 +41,7 @@ export const settlementProjectionSchema = z.object({
 });
 export type SettlementProjection = z.infer<typeof settlementProjectionSchema>;
 export const settlementSourceRowSchema = z.object({
+  mode: stripeModeSchema,
   id: z.string(),
   group_id: z.string(),
   cart_id: z.string(),
@@ -88,8 +90,8 @@ const SOURCE_REVISION_SQL = `md5(concat_ws('|', c.updated_at::text, c.registrati
   (select string_agg(o.id || ':' || o.state || ':' || o.updated_at::text || ':' || coalesce(o.result::text, ''), '|' order by o.id)
     from commerce_operation o where o.group_id = c.group_id and o.deleted_at is null),
   (select string_agg(f.id || ':' || f.updated_at::text || ':' || f.fact::text, '|' order by f.id)
-    from finance_provider_fact f where f.group_id = c.group_id and f.deleted_at is null)))`;
-const SOURCE_SCOPE_SQL = `select c.*, p.invalidation_token,
+    from finance_provider_fact f where f.group_id = c.group_id and f.mode = (select mode from selected_mode) and f.deleted_at is null)))`;
+const SOURCE_SCOPE_SQL = `select c.*, (select mode from selected_mode) as mode, p.invalidation_token,
   ${SOURCE_REVISION_SQL} as current_source_revision,
   p.source_revision, p.evaluated_token, p.refreshed_at, p.pending_amount::numeric as pending_amount,
   p.status as projection_status, coalesce(p.data_kind, 'unknown') as data_kind,
@@ -103,9 +105,12 @@ const SOURCE_SCOPE_SQL = `select c.*, p.invalidation_token,
         or s.observation->'finance_execution_writers' = '[]'::jsonb)))) as is_fresh
   from order_completion c
   left join vendor_settlement_projection p on p.id = c.id
+    and p.mode = (select mode from selected_mode)
     and p.seller_id = c.seller_id and p.group_id = c.group_id and p.cart_id = c.cart_id and p.deleted_at is null
   left join commerce_group_state s on s.id = c.group_id and s.deleted_at is null
-  where c.deleted_at is null`;
+  where c.deleted_at is null
+    and not exists (select 1 from vendor_settlement_projection other_mode
+      where other_mode.id = c.id and other_mode.mode <> (select mode from selected_mode))`;
 
 function database(manager: EntityManager) {
   return manager.getTransactionContext() ?? manager.getKnex();
@@ -117,7 +122,7 @@ export async function readSettlementRegistry(
 ): Promise<RegistryReadResult> {
   const parsed = registryReadInputSchema.parse(input);
   const result = await database(manager).raw(
-    `with scoped as (${SOURCE_SCOPE_SQL}
+    `with selected_mode as (select ?::text as mode), scoped as (${SOURCE_SCOPE_SQL}
     and c.seller_id = ?), effective as (
     select *, case when is_fresh then pending_amount else null end as effective_amount,
       case when is_fresh then projection_status else 'needs_review' end as effective_status
@@ -139,6 +144,7 @@ export async function readSettlementRegistry(
     from visible order by eligible_at, id limit ? offset ?
   ) select summary.*, coalesce((select jsonb_agg(page order by eligible_at, order_id) from page), '[]'::jsonb) as items from summary`,
     [
+      getStripeMode(),
       parsed.now,
       parsed.seller_id,
       parsed.data_kind,
@@ -155,10 +161,10 @@ export async function listDirtySettlementGroups(
   now: Date,
 ): Promise<string[]> {
   const result = await database(manager).raw(
-    `with scoped as (${SOURCE_SCOPE_SQL})
+    `with selected_mode as (select ?::text as mode), scoped as (${SOURCE_SCOPE_SQL})
     select group_id from scoped where not coalesce(is_fresh, false)
     group by group_id order by min(coalesce(refreshed_at, completed_at)), group_id limit ?`,
-    [now, take],
+    [getStripeMode(), now, take],
   );
   return z
     .array(z.object({ group_id: z.string() }))
@@ -171,14 +177,14 @@ export async function readSettlementGroupSource(
   groupId: string,
 ): Promise<SettlementSourceRow[]> {
   const result = await database(manager).raw(
-    `with scoped as (${SOURCE_SCOPE_SQL} and c.group_id = ?)
-    select id, group_id, cart_id, seller_id, release_delay_days,
+    `with selected_mode as (select ?::text as mode), scoped as (${SOURCE_SCOPE_SQL} and c.group_id = ?)
+    select id, group_id, cart_id, seller_id, mode, release_delay_days,
       to_json(completed_at) #>> '{}' as completed_at,
       to_json(eligible_at) #>> '{}' as eligible_at,
       to_json(observed_order_updated_at) #>> '{}' as observed_order_updated_at,
       registration_token, current_source_revision as source_revision, invalidation_token
     from scoped order by id`,
-    [new Date(), groupId],
+    [getStripeMode(), new Date(), groupId],
   );
   return settlementSourceRowSchema.array().parse(result.rows);
 }
@@ -200,7 +206,7 @@ export async function invalidateSettlementRegistry(
     await database(manager)("vendor_settlement_projection")
       .insert({
         ...row,
-        mode: "test",
+        mode: getStripeMode(),
         currency_code: "usd",
         data_kind: "unknown",
         status: "needs_review",
@@ -211,7 +217,12 @@ export async function invalidateSettlementRegistry(
         updated_at: new Date(),
       })
       .onConflict("id")
-      .merge({ invalidation_token: token, updated_at: new Date() });
+      .merge({ invalidation_token: token, updated_at: new Date() })
+      .whereRaw(`vendor_settlement_projection.mode = excluded.mode
+        and vendor_settlement_projection.seller_id = excluded.seller_id
+        and vendor_settlement_projection.group_id = excluded.group_id
+        and vendor_settlement_projection.cart_id = excluded.cart_id
+        and vendor_settlement_projection.deleted_at is null`);
   }
 }
 
@@ -224,11 +235,12 @@ export async function saveSettlementGroupProjection(
   },
 ): Promise<boolean> {
   const expected = settlementSourceRowSchema.array().parse(input.source);
+  const mode = getStripeMode();
   const projections = settlementProjectionSchema
     .array()
     .parse(input.projections);
   if (
-    !expected.length ||
+    !expected.length || expected.some((row) => row.mode !== mode) ||
     projections.length !== expected.length ||
     new Set(projections.map((row) => row.id)).size !== projections.length
   )
@@ -247,7 +259,7 @@ export async function saveSettlementGroupProjection(
     .forUpdate()
     .select("id");
   await database(manager)("vendor_settlement_projection")
-    .where({ group_id: groupId })
+    .where({ group_id: groupId, mode })
     .whereNull("deleted_at")
     .orderBy("id")
     .forUpdate()
@@ -287,7 +299,7 @@ export async function saveSettlementGroupProjection(
   for (const projection of projections) {
     const source = current.find((row) => row.id === projection.id)!;
     const existing = await database(manager)("vendor_settlement_projection")
-      .where({ id: projection.id })
+      .where({ id: projection.id, mode })
       .whereNull("deleted_at")
       .select("data_kind")
       .first();
@@ -303,7 +315,7 @@ export async function saveSettlementGroupProjection(
           ? null
           : projection.pending_amount.toFixed(2),
       projection: JSON.stringify(projection.projection),
-      mode: "test",
+      mode,
       currency_code: "usd",
       source_revision: source.source_revision,
       evaluated_token: source.invalidation_token,
@@ -311,10 +323,17 @@ export async function saveSettlementGroupProjection(
       refreshed_at: input.refreshed_at,
       updated_at: new Date(),
     };
-    await database(manager)("vendor_settlement_projection")
+    const saved = await database(manager)("vendor_settlement_projection")
       .insert({ ...columns, created_at: new Date() })
       .onConflict("id")
-      .merge(columns);
+      .merge(columns)
+      .whereRaw(`vendor_settlement_projection.mode = excluded.mode
+        and vendor_settlement_projection.seller_id = excluded.seller_id
+        and vendor_settlement_projection.group_id = excluded.group_id
+        and vendor_settlement_projection.cart_id = excluded.cart_id
+        and vendor_settlement_projection.deleted_at is null`)
+      .returning("id");
+    if (saved.length !== 1) return false;
   }
   return true;
 }

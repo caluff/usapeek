@@ -3,6 +3,8 @@
  * After reserving Redis DB15 exclusively and importing the local TLS closure
  * environment, set PAYMENT_WEBHOOK_DURABILITY_TESTS=disposable-local and run:
  * pnpm test:integration:http --runTestsByPath integration-tests/http/payment-webhook-durability.spec.ts
+ * PAYMENT_WEBHOOK_DURABILITY_MODE=live exercises LIVE guards with an invalid
+ * local-only key and blocked HTTPS; omitted mode preserves TEST coverage.
  *
  * The fixture uses native authorization/fulfillment, then the actual finance
  * capture workflow writes its journal and provider metadata. Signed HTTP events
@@ -22,9 +24,12 @@ import {
 } from "@medusajs/framework/utils";
 import type Stripe from "stripe";
 import { createStripeClient } from "../../src/lib/stripe-client";
+import { getStripeConnectConfiguration } from "../../src/lib/stripe-connect-configuration";
 import { readOrderFinance } from "../../src/lib/order-finance/read";
 import { financeAmount } from "../../src/lib/order-finance/policy";
-import { FINAL_CAPTURE_OPERATION_METADATA } from "../../src/modules/stripe-allocated-payment/service";
+import StripeAllocatedPaymentService, {
+  FINAL_CAPTURE_OPERATION_METADATA,
+} from "../../src/modules/stripe-allocated-payment/service";
 import { operateOrderFinanceWorkflow } from "../../src/workflows/operate-order-finance";
 import { useNativeEsmPayoutProvider } from "../helpers/native-esm-provider-loader";
 import { configureNativeFinanceDatabaseTls } from "../helpers/native-finance-database-tls";
@@ -34,7 +39,11 @@ import { installFinanceDurabilityStripe } from "./fixtures/finance-durability-st
 
 const enabled =
   process.env.PAYMENT_WEBHOOK_DURABILITY_TESTS === "disposable-local";
-const apiKey = "sk_test_payment";
+const mode = process.env.PAYMENT_WEBHOOK_DURABILITY_MODE ?? "test";
+if (mode !== "test" && mode !== "live")
+  throw new Error("Payment webhook durability mode must be test or live.");
+const livemode = mode === "live";
+const apiKey = `sk_${mode}_payment`;
 const signingSecret = "whsec_PaymentWebhookDurability";
 
 if (!enabled) {
@@ -66,11 +75,14 @@ if (!enabled) {
   process.env.STRIPE_WEBHOOK_SECRET = signingSecret;
   process.env.STRIPE_PAYOUT_WEBHOOK_SECRET = "whsec_OfflinePayoutWebhook";
   process.env.STRIPE_AUTOMATIC_JOBS_ENABLED = "false";
-  process.env.FINANCE_CHECKOUT_DATA_KIND = "qa_fixture";
+  process.env.STRIPE_MODE = mode;
+  process.env.STRIPE_LIVE_ENABLED = String(livemode);
+  process.env.STRIPE_ACCOUNT_ID = "acct_durabilityplatform";
+  process.env.FINANCE_CHECKOUT_DATA_KIND = livemode ? "ordinary" : "qa_fixture";
   process.env.AUTH_EMAIL_ENABLED = "false";
   process.env.MEDUSA_DISABLE_TELEMETRY = "true";
   process.env.MEDUSA_WORKER_MODE = "shared";
-  let simulated = installFinanceDurabilityStripe();
+  let simulated = installFinanceDurabilityStripe(livemode);
   const stripe = createStripeClient(apiKey, { maxNetworkRetries: 0 });
   jest.setTimeout(120_000);
 
@@ -130,7 +142,7 @@ if (!enabled) {
 
       beforeEach(async () => {
         simulated.restore();
-        simulated = installFinanceDurabilityStripe();
+        simulated = installFinanceDurabilityStripe(livemode);
         const result = await dbConnection.raw(
           "select current_database() as database_name, ssl from pg_stat_ssl where pid = pg_backend_pid()",
         );
@@ -189,17 +201,213 @@ if (!enabled) {
           id: `evt_${randomUUID().replaceAll("-", "")}`,
           object: "event",
           type,
-          livemode: false,
+          livemode,
           created,
           data: { object: intent },
         };
       }
+
+      it("preserves TEST defaults and requires an explicit, bound manual LIVE configuration", () => {
+        const environment: NodeJS.ProcessEnv = {
+          NODE_ENV: "production",
+          STRIPE_API_KEY: "sk_test_configuration",
+          STRIPE_WEBHOOK_SECRET: "whsec_ConfigurationPayment",
+          STRIPE_PAYOUT_WEBHOOK_SECRET: "whsec_ConfigurationPayout",
+          VENDOR_PUBLIC_URL: "https://vendor.usapeek.com",
+        };
+        expect(getStripeConnectConfiguration(environment)).toMatchObject({
+          mode: "test",
+          livemode: false,
+          jobsEnabled: false,
+        });
+        const live = {
+          ...environment,
+          STRIPE_MODE: "live",
+          STRIPE_API_KEY: "sk_live_configuration",
+          STRIPE_LIVE_ENABLED: "true",
+          STRIPE_ACCOUNT_ID: "acct_configuration",
+        };
+        expect(getStripeConnectConfiguration(live)).toMatchObject({
+          mode: "live",
+          livemode: true,
+          jobsEnabled: false,
+        });
+        expect(
+          getStripeConnectConfiguration({
+            ...live,
+            STRIPE_API_KEY: " ",
+            STRIPE_LIVE_ENABLED: "false",
+          }),
+        ).toBeNull();
+        for (const override of [
+          { STRIPE_LIVE_ENABLED: "false" },
+          { STRIPE_LIVE_ENABLED: undefined },
+          { STRIPE_ACCOUNT_ID: " " },
+          { STRIPE_ACCOUNT_ID: "invalid" },
+          { STRIPE_API_KEY: "sk_test_configuration" },
+          { STRIPE_AUTOMATIC_JOBS_ENABLED: "true" },
+          { STRIPE_AUTOMATIC_SETTLEMENT_ENABLED: "true" },
+        ]) {
+          expect(() =>
+            getStripeConnectConfiguration({ ...live, ...override }),
+          ).toThrow();
+        }
+        expect(() =>
+          getStripeConnectConfiguration({
+            ...environment,
+            STRIPE_API_KEY: "sk_live_configuration",
+          }),
+        ).toThrow();
+        expect(() =>
+          getStripeConnectConfiguration({ ...live, STRIPE_MODE: "production" }),
+        ).toThrow();
+        expect(simulated.requests).toEqual([]);
+      });
+
+      it("checks the bound platform before every customer, payment-method and payment mutation", async () => {
+        const payment = getContainer().resolve<IPaymentModuleService>(
+          Modules.PAYMENT,
+        );
+        const internal = payment as unknown as {
+          paymentProviderService_: {
+            retrieveProvider(id: string): StripeAllocatedPaymentService;
+          };
+        };
+        const provider =
+          internal.paymentProviderService_.retrieveProvider("pp_stripe_stripe");
+        expect(provider).toBeInstanceOf(StripeAllocatedPaymentService);
+        if (livemode) {
+          const configured = await payment.listPaymentProviders(
+            {},
+            { take: 100 },
+          );
+          expect(
+            configured
+              .filter((entry) => entry.id.startsWith("pp_stripe"))
+              .map((entry) => entry.id),
+          ).toEqual(["pp_stripe_stripe"]);
+        }
+        const rows = async () =>
+          (
+            await dbConnection.raw(
+              `select (select count(*) from payment) as payments,
+            (select count(*) from payment_session) as sessions,
+            (select count(*) from account_holder) as account_holders,
+            (select count(*) from refund) as refunds`,
+            )
+          ).rows;
+        const before = await rows();
+        const context = { account_holder: { data: { id: "cus_preflight" } } };
+        const data = { id: "pi_preflight", livemode };
+        const calls = [
+          () =>
+            provider.createAccountHolder({
+              context: {
+                customer: {
+                  id: "customer_preflight",
+                  email: "preflight@example.invalid",
+                },
+              },
+            }),
+          () => provider.updateAccountHolder({ context }),
+          () => provider.deleteAccountHolder({ context }),
+          () =>
+            provider.savePaymentMethod({
+              context,
+              data: { id: "pm_preflight" },
+            }),
+          () =>
+            provider.deletePaymentMethod({
+              context,
+              data: { id: "pm_preflight" },
+            }),
+          () => provider.initiatePayment({ amount: 1, currency_code: "usd" }),
+          () => provider.capturePayment({ data }),
+          () => provider.cancelPayment({ data }),
+          () =>
+            provider.updatePayment({ amount: 1, currency_code: "usd", data }),
+          () => provider.refundPayment({ amount: 1, data }),
+        ];
+        simulated.state.platformAccountId = "acct_WrongPlatform";
+        try {
+          for (const call of calls) {
+            const started = simulated.requests.length;
+            await expect(call()).rejects.toThrow(
+              "platform account does not match",
+            );
+            expect(simulated.requests.slice(started)).toEqual([
+              expect.objectContaining({ method: "GET", path: "/v1/account" }),
+            ]);
+            expect(await rows()).toEqual(before);
+          }
+          expect(simulated.rejected).toEqual([]);
+          expect(simulated.state).toMatchObject({
+            captureCalls: 0,
+            refundCreates: 0,
+            reversalCreates: 0,
+          });
+        } finally {
+          simulated.state.platformAccountId = "acct_durabilityplatform";
+        }
+      });
+
+      it("rejects signed events with a different or missing event/intent mode before native financial processing", async () => {
+        const fixture = await createFinanceDurabilityFixture(getContainer(), {
+          paymentState: "authorized",
+          livemode,
+        });
+        const intent = await stripe.paymentIntents.retrieve(
+          fixture.paymentIntentId,
+        );
+        const event = notification(
+          "payment_intent.amount_capturable_updated",
+          intent,
+          Math.floor(Date.now() / 1000),
+        );
+        const invalid = [
+          { ...event, livemode: !livemode },
+          { ...event, data: { object: { ...intent, livemode: !livemode } } },
+          { ...event, livemode: undefined },
+          { ...event, data: { object: { ...intent, livemode: undefined } } },
+        ];
+        const payment = getContainer().resolve<IPaymentModuleService>(
+          Modules.PAYMENT,
+        );
+        const before = await snapshot(fixture);
+        const readsBefore = simulated.requests.length;
+        for (const body of invalid) {
+          const raw = JSON.stringify(body);
+          await expect(
+            payment.getWebhookActionAndData({
+              provider: "stripe_stripe",
+              payload: {
+                data: body,
+                rawData: raw,
+                headers: {
+                  "stripe-signature": stripe.webhooks.generateTestHeaderString({
+                    payload: raw,
+                    secret: signingSecret,
+                  }),
+                },
+              },
+            }),
+          ).rejects.toThrow("webhook mode does not match");
+          expect(await snapshot(fixture)).toEqual(before);
+          expect(simulated.requests).toHaveLength(readsBefore);
+          expect(simulated.state).toMatchObject({
+            captureCalls: 0,
+            refundCreates: 0,
+            reversalCreates: 0,
+          });
+        }
+      });
 
       it.each([false, true])(
         "keeps journal-owned capture unchanged after duplicate signed successes (with delayed authorization: %s)",
         async (reordered) => {
           const fixture = await createFinanceDurabilityFixture(getContainer(), {
             paymentState: "authorized",
+            livemode,
           });
           const originalBefore = (await read(fixture)).originals;
           const authorized = await stripe.paymentIntents.retrieve(

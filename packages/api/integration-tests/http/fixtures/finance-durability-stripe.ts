@@ -1,8 +1,10 @@
 import { installStripeTransport } from "../../helpers/webhook-stripe-transport";
+import type Stripe from "stripe";
 
 /** Explicit provider simulation. Only the application, native workflows and PG
  * are real in this suite. This ledger is deliberately independent of the journal. */
-export function installFinanceDurabilityStripe() {
+export function installFinanceDurabilityStripe(livemode = false) {
+  const accounts = new Map<string, Stripe.Account>();
   const created = Math.floor(Date.now() / 1000) - 10;
   const refunds: Array<{
     id: string;
@@ -34,7 +36,7 @@ export function installFinanceDurabilityStripe() {
     amount_received: 0,
     amount_capturable: 10_000,
     currency: "usd",
-    livemode: false,
+    livemode,
     status: "requires_capture",
     capture_method: "manual",
     latest_charge: "ch_durability",
@@ -59,8 +61,10 @@ export function installFinanceDurabilityStripe() {
       }
     | undefined;
   const state = {
+    platformAccountId: "acct_durabilityplatform",
     refundCreates: 0,
     reversalCreates: 0,
+    transferCreates: 0,
     captureCalls: 0,
     loseRefundResponse: false,
     loseReversalResponse: false,
@@ -77,8 +81,9 @@ export function installFinanceDurabilityStripe() {
     amount_captured: intent.amount_received,
     amount_refunded: refunds.reduce((total, row) => total + row.amount, 0),
     currency: "usd",
-    livemode: false,
+    livemode,
     paid: true,
+    disputed: false,
     captured: intent.status === "succeeded",
     status: "succeeded",
     payment_intent: intent.id,
@@ -148,11 +153,16 @@ export function installFinanceDurabilityStripe() {
     if (request.method === "GET" && path === "/v1/charges/ch_durability")
       return ok(charge());
     if (request.method === "GET" && path === "/v1/account")
-      return ok({ id: "acct_durabilityplatform", object: "account" });
+      return ok({ id: state.platformAccountId, object: "account" });
+    if (request.method === "GET" && path.startsWith("/v1/accounts/")) {
+      const account = accounts.get(path.slice("/v1/accounts/".length));
+      if (!account) throw new Error("Unknown simulated connected account");
+      return ok(account);
+    }
     if (request.method === "GET" && path === "/v1/balance")
       return ok({
         object: "balance",
-        livemode: false,
+        livemode,
         available: [],
         pending: [],
       });
@@ -200,6 +210,42 @@ export function installFinanceDurabilityStripe() {
           path,
         ),
       );
+    if (request.method === "POST" && path === "/v1/transfers") {
+      const attributes = metadata(body);
+      if (
+        transfer ||
+        Number(body.get("amount")) !== 6440 ||
+        body.get("currency") !== "usd" ||
+        body.get("destination") !== "acct_durabilityseller" ||
+        body.get("source_transaction") !== "ch_durability" ||
+        body.get("transfer_group") !== `group_${intent.id}` ||
+        !attributes.finance_operation_id ||
+        !attributes.order_id ||
+        !attributes.group_id ||
+        !attributes.seller_id
+      )
+        throw new Error("Unexpected simulated native transfer request");
+      state.transferCreates++;
+      transfer = {
+        id: "tr_durability",
+        object: "transfer",
+        amount: 6440,
+        amount_reversed: 0,
+        currency: "usd",
+        livemode,
+        destination: "acct_durabilityseller",
+        source_transaction: "ch_durability",
+        transfer_group: `group_${intent.id}`,
+        metadata: attributes,
+        created,
+        balance_transaction: null,
+      };
+      return ok(transfer);
+    }
+    if (request.method === "GET" && path === "/v1/transfers/tr_durability") {
+      if (!transfer) throw new Error("Unknown simulated native transfer");
+      return ok(transfer);
+    }
     if (
       request.method === "POST" &&
       path === "/v1/transfers/tr_durability/reversals"
@@ -238,7 +284,7 @@ export function installFinanceDurabilityStripe() {
                 id: "evt_durability_capture",
                 object: "event",
                 type: "charge.captured",
-                livemode: false,
+                livemode,
                 created,
                 data: { object: charge() },
               },
@@ -247,7 +293,7 @@ export function installFinanceDurabilityStripe() {
               id: `evt_${refund.id}`,
               object: "event",
               type: "refund.created",
-              livemode: false,
+              livemode,
               created,
               data: { object: refund },
             }));
@@ -260,6 +306,7 @@ export function installFinanceDurabilityStripe() {
   });
   return {
     ...transport,
+    accounts,
     state,
     refunds,
     reversals,
@@ -281,7 +328,7 @@ export function installFinanceDurabilityStripe() {
         amount: 6_440,
         amount_reversed: 0,
         currency: "usd",
-        livemode: false,
+        livemode,
         destination: "acct_durabilityseller",
         source_transaction: "ch_durability",
         transfer_group: `group_${intent.id}`,

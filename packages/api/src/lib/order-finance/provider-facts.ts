@@ -1,3 +1,8 @@
+import {
+  isStripeLivemode,
+  stripeModeSchema,
+  type StripeMode,
+} from "../stripe-mode";
 import { isDeepStrictEqual } from "node:util";
 import { MedusaError } from "@medusajs/framework/utils";
 import { z } from "@medusajs/framework/zod";
@@ -22,7 +27,7 @@ export const providerFinanceFactSchema = z.object({
   key: id,
   kind,
   provider: z.literal("stripe"),
-  mode: z.literal("test"),
+  mode: stripeModeSchema,
   account_id: id,
   group_id: id,
   operation_id: id.nullable(),
@@ -62,7 +67,7 @@ export const providerFinanceCostSchema = z
   .object({
     key: id,
     provider: z.literal("stripe"),
-    mode: z.literal("test"),
+    mode: stripeModeSchema,
     account_id: id,
     balance_transaction_id: id,
     source_id: id.nullable(),
@@ -125,6 +130,7 @@ const attributionSchema = z.object({
 export type ProviderFactAttribution = z.infer<typeof attributionSchema>;
 
 const observationInputSchema = z.object({
+  mode: stripeModeSchema.default("test"),
   account_id: id,
   group_id: id,
   charge_id: id,
@@ -225,8 +231,13 @@ function timestamp(seconds: number) {
   return fromUnixTime(seconds).toISOString();
 }
 
-function uniqueKey(account: string, type: string, providerId: string) {
-  return `stripe:test:${account}:${type === "authorization_release" ? "refund" : type}:${providerId}`;
+function uniqueKey(
+  mode: StripeMode,
+  account: string,
+  type: string,
+  providerId: string,
+) {
+  return `stripe:${mode}:${account}:${type === "authorization_release" ? "refund" : type}:${providerId}`;
 }
 
 /** Reads every page, preserving an explicit incomplete result on limits/errors. */
@@ -298,20 +309,23 @@ export async function observeStripeFinanceFacts(
     stripe.accounts.retrieveCurrent(),
     stripe.balance.retrieve(),
   ]);
-  if (account.id !== input.account_id || balance.livemode !== false)
+  if (
+    account.id !== input.account_id ||
+    !isStripeLivemode(balance.livemode, input.mode)
+  )
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
-      "Finance observation requires the expected Stripe TEST account",
+      "Finance observation requires the expected Stripe account and mode",
     );
   const charge = await stripe.charges.retrieve(input.charge_id);
   if (
     charge.id !== input.charge_id ||
-    charge.livemode !== false ||
+    !isStripeLivemode(charge.livemode, input.mode) ||
     charge.currency !== "usd"
   )
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
-      "Finance observation requires a matching USD TEST charge",
+      "Finance observation requires a matching USD charge and mode",
     );
   minor.nonnegative().parse(charge.amount);
   minor.nonnegative().parse(charge.amount_captured);
@@ -392,10 +406,10 @@ export async function observeStripeFinanceFacts(
         ? "matched"
         : "unattributed";
     const fact = providerFinanceFactSchema.parse({
-      key: uniqueKey(input.account_id, type, movement.id),
+      key: uniqueKey(input.mode, input.account_id, type, movement.id),
       kind: type,
       provider: "stripe",
-      mode: "test",
+      mode: input.mode,
       account_id: input.account_id,
       group_id: input.group_id,
       operation_id: !conflict ? (attribution?.operation_id ?? null) : null,
@@ -468,9 +482,9 @@ export async function observeStripeFinanceFacts(
       events.complete &&
       event &&
       object?.object === "charge" &&
-      event.livemode === false &&
+      isStripeLivemode(event.livemode, input.mode) &&
       (!event.account || event.account === input.account_id) &&
-      object.livemode === false &&
+      isStripeLivemode(object.livemode, input.mode) &&
       object.currency === "usd" &&
       object.captured &&
       object.paid &&
@@ -567,7 +581,7 @@ export async function observeStripeFinanceFacts(
         const previous = event.data.previous_attributes as
           { status?: Stripe.Refund["status"] } | undefined;
         return (
-          event.livemode === false &&
+          isStripeLivemode(event.livemode, input.mode) &&
           (!event.account || event.account === input.account_id) &&
           object.id === refund.id &&
           object.status === "succeeded" &&
@@ -649,10 +663,13 @@ export async function observeStripeFinanceFacts(
     }
   }
   for (const transfer of discoveredTransfers.values()) {
-    if (transfer.livemode !== false || transfer.currency !== "usd")
+    if (
+      !isStripeLivemode(transfer.livemode, input.mode) ||
+      transfer.currency !== "usd"
+    )
       throw new MedusaError(
         MedusaError.Types.NOT_ALLOWED,
-        "Finance observation requires USD TEST transfers",
+        "Finance observation requires USD transfers in the expected mode",
       );
     const order = input.orders.find(
       (candidate) =>
@@ -849,9 +866,14 @@ export async function observeStripeFinanceFacts(
     if (status !== "confirmed") issue(transactionId, `cost_${status}`);
     costs.push(
       providerFinanceCostSchema.parse({
-        key: uniqueKey(input.account_id, "balance_transaction", transactionId),
+        key: uniqueKey(
+          input.mode,
+          input.account_id,
+          "balance_transaction",
+          transactionId,
+        ),
         provider: "stripe",
-        mode: "test",
+        mode: input.mode,
         account_id: input.account_id,
         balance_transaction_id: transactionId,
         source_id: objectId(transaction?.source),

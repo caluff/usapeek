@@ -4,6 +4,7 @@ import type {
 } from "@medusajs/framework/types";
 import { MedusaError, Modules } from "@medusajs/framework/utils";
 import { z } from "@medusajs/framework/zod";
+import { getStripeMode } from "../stripe-mode";
 import {
   paymentCaptureModeSchema,
   type PaymentCaptureSettingsResponse,
@@ -60,6 +61,11 @@ export async function assertAutomaticCaptureSettings(
   revision: string,
   actorId: string,
 ) {
+  if (getStripeMode() !== "test")
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "El cobro automático está disponible únicamente en Stripe TEST.",
+    );
   const settings = await readPaymentCaptureSettings(container);
   if (
     settings.mode !== "automatic" ||

@@ -5,6 +5,7 @@ import type {
 import { MedusaError, Modules } from "@medusajs/framework/utils";
 import { z } from "@medusajs/framework/zod";
 import { getStripeConnectConfiguration } from "../stripe-connect-configuration";
+import { getStripeMode } from "../stripe-mode";
 import {
   DEFAULT_PAYMENT_RELEASE_DELAY_DAYS,
   paymentReleaseDelayDaysSchema,
@@ -27,7 +28,11 @@ export function automaticReleaseAvailable(
 ): boolean {
   try {
     const configuration = getStripeConnectConfiguration(env);
-    return Boolean(configuration && !configuration.jobsEnabled);
+    return Boolean(
+      configuration &&
+      configuration.mode === "test" &&
+      !configuration.jobsEnabled,
+    );
   } catch {
     return false;
   }
@@ -40,6 +45,7 @@ export function parsePaymentReleaseSettings(
   const saved = metadata?.[RELEASE_SETTINGS_METADATA_KEY];
   if (saved === undefined) {
     const mode =
+      getStripeMode(env) === "test" &&
       env.STRIPE_AUTOMATIC_SETTLEMENT_ENABLED === "true"
         ? "automatic"
         : "manual";

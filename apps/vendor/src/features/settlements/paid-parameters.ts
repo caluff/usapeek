@@ -16,12 +16,11 @@ export function paidSettlementListInput(params: PaidSettlementSearchParams) {
     page: pagination.page,
     query: {
       period: financePeriodInput(params.period),
-      mode: "test",
       currency_code: "usd",
       data_kind: "ordinary",
       limit: pagination.limit,
       offset: pagination.offset,
-    } satisfies VendorEarningsQuery,
+    } satisfies Omit<VendorEarningsQuery, "mode">,
   };
 }
 

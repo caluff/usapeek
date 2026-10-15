@@ -1,7 +1,8 @@
+import { isStripeLivemode } from "../stripe-mode";
 import { MathBN, MedusaError } from "@medusajs/framework/utils";
 import { z } from "@medusajs/framework/zod";
 import { decimal, financeAmount, type FinanceOperation } from "./policy";
-import { financeStripeClient } from "./provider";
+import { verifiedFinanceStripeClient } from "./provider";
 import { readOrderTransfers } from "./list-order-transfers";
 import { readStripeFactPages } from "./provider-facts";
 
@@ -19,7 +20,9 @@ export const financePayoutSchema = z.object({
     id: z.string().startsWith("tr_"),
     transfer_group: z.string(),
     destination: z.string().startsWith("acct_"),
-    livemode: z.literal(false),
+    livemode: z
+      .boolean()
+      .refine((value) => isStripeLivemode(value), "Stripe mode mismatch"),
     metadata: z.object({
       seller_id: z.string(),
       order_id: z.string().optional(),
@@ -127,7 +130,7 @@ export async function prepareSettlement(input: {
     seller_reversed: 0,
     component_attribution: "unallocated",
   };
-  const stripe = financeStripeClient();
+  const stripe = await verifiedFinanceStripeClient();
   if (input.paymentIntentId && !input.chargeId)
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
@@ -138,7 +141,7 @@ export async function prepareSettlement(input: {
     : undefined;
   if (
     charge &&
-    (charge.livemode ||
+    (!isStripeLivemode(charge.livemode) ||
       charge.currency !== "usd" ||
       !charge.captured ||
       (typeof charge.payment_intent === "string"
@@ -187,7 +190,7 @@ export async function prepareSettlement(input: {
   if (
     transfers.length !== 1 ||
     !transfer ||
-    transfer.livemode ||
+    !isStripeLivemode(transfer.livemode) ||
     transfer.id !== payout.data.id ||
     transfer.currency !== "usd" ||
     transfer.destination !== payout.account.data.id ||
@@ -265,7 +268,7 @@ export async function reverseSettlement(
       MedusaError.Types.NOT_ALLOWED,
       "La reversión requiere una transferencia verificada.",
     );
-  const stripe = financeStripeClient();
+  const stripe = await verifiedFinanceStripeClient();
   const amount = MathBN.mult(required, 100).toNumber();
   const reversal = await stripe.transfers.createReversal(
     settlement.transfer_id,

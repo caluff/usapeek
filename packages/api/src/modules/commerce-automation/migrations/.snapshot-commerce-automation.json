@@ -702,7 +702,8 @@
           "default": null,
           "comment": null,
           "enumItems": [
-            "test"
+            "test",
+            "live"
           ],
           "mappedType": "enum"
         },
@@ -935,7 +936,8 @@
           "default": null,
           "comment": null,
           "enumItems": [
-            "test"
+            "test",
+            "live"
           ],
           "mappedType": "enum"
         },
@@ -2051,7 +2053,8 @@
           "default": "'test'",
           "comment": null,
           "enumItems": [
-            "test"
+            "test",
+            "live"
           ],
           "mappedType": "enum"
         },
@@ -2375,7 +2378,8 @@
           "default": "'test'",
           "comment": null,
           "enumItems": [
-            "test"
+            "test",
+            "live"
           ],
           "mappedType": "enum"
         },

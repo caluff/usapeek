@@ -18,6 +18,7 @@ import {
   readPaymentCaptureSettings,
 } from "../lib/order-finance/capture-settings";
 import { withPaymentSettingsLock } from "../lib/order-finance/payment-settings-lock";
+import { getStripeMode } from "../lib/stripe-mode";
 
 type Input = UpdatePaymentCaptureSettings & { actor_id: string };
 export async function updatePaymentCaptureSettings(
@@ -34,6 +35,11 @@ export async function updatePaymentCaptureSettings(
       "Debes iniciar sesión como operador.",
     );
   }
+  if (body.mode === "automatic" && getStripeMode() !== "test")
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "El cobro automático está disponible únicamente en Stripe TEST.",
+    );
   return withPaymentSettingsLock(container, async () => {
     const current = await readPaymentCaptureSettings(container);
     if (current.revision !== body.expected_revision) {

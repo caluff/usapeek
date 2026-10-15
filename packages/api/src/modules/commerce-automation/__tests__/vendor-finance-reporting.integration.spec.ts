@@ -147,6 +147,50 @@ if (!enabled) {
           refreshed_at,
         });
 
+      it("isolates mode-bound reporting and never retags an existing order", async () => {
+        const priorMode = process.env.STRIPE_MODE;
+        process.env.STRIPE_MODE = "test";
+        try {
+          const testSource = await seed();
+          expect(await save(testSource)).toBe(true);
+          const manager = MikroOrmWrapper.getManager();
+          await manager.execute(
+            "insert into finance_sale_snapshot (id, seller_id, group_id, cart_id, currency_code, original) values ('order_own', 'seller_own', 'group_own', 'cart_group_own', 'usd', '{}'::jsonb)",
+          );
+          expect(await service.saveVendorReportingDiscovery({
+            references: [],
+            expected: { cursor: null, complete: false },
+            next: { cursor: "group_own", complete: true },
+          })).toBe(true);
+          const before = await manager.execute(
+            "select * from vendor_finance_reporting_projection where id = 'order_own'",
+          );
+          process.env.STRIPE_MODE = "live";
+          expect((await read()).rows).toEqual([]);
+          expect(await service.readVendorReportingDiscovery()).toEqual({ cursor: null, complete: false });
+          expect(await service.readVendorReportingGroupSource("group_own")).toEqual([]);
+          expect(await save(testSource)).toBe(false);
+          await expect(
+            service.registerVendorReportingReferences(testSource),
+          ).rejects.toThrow("The reporting order binding changed.");
+          await service.invalidateVendorFinanceReporting(["order_own"]);
+          expect(await manager.execute(
+            "select * from vendor_finance_reporting_projection where id = 'order_own'",
+          )).toEqual(before);
+
+          const liveSource = await seed(["order_live"], "group_live");
+          expect(liveSource[0].mode).toBe("live");
+          expect(await save(liveSource)).toBe(true);
+          expect((await read()).rows.map((row) => row.id)).toEqual(["order_live"]);
+          process.env.STRIPE_MODE = "test";
+          expect((await read()).rows.map((row) => row.id)).toEqual(["order_own"]);
+          expect(await service.readVendorReportingDiscovery()).toEqual({ cursor: "group_own", complete: true });
+        } finally {
+          if (priorMode === undefined) delete process.env.STRIPE_MODE;
+          else process.env.STRIPE_MODE = priorMode;
+        }
+      });
+
       it("includes originals before discovery and scopes every row to its seller", async () => {
         await seed(["order_own"], "group_own", "seller_own", true);
         await seed(["order_other"], "group_other", "seller_other", true);

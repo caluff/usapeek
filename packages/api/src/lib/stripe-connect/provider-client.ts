@@ -4,6 +4,23 @@ import type {
   CreateOnboardingInput,
   CreatePayoutAccountInput,
 } from "@mercurjs/types";
+import { createStripeClient } from "../stripe-client";
+import type { StripeConnectConfiguration } from "../stripe-connect-configuration";
+import { assertStripePlatformAccount } from "../stripe-mode";
+
+/** Verify the configured platform before native Connect operations can write. */
+export async function assertNativeStripePlatform(
+  configuration: StripeConnectConfiguration,
+) {
+  // Preserve the existing unbound TEST configuration used by develop.
+  if (configuration.mode !== "live" && !process.env.STRIPE_ACCOUNT_ID?.trim()) return;
+  const stripe = createStripeClient(configuration.apiKey, {
+    timeout: 10000,
+    maxNetworkRetries: 0,
+  });
+  const platform = await stripe.accounts.retrieveCurrent();
+  assertStripePlatformAccount(platform.id);
+}
 
 const emptyContext = z.strictObject({}).optional();
 const accountBody = z.strictObject({

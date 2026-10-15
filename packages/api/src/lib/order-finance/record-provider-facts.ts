@@ -1,3 +1,8 @@
+import {
+  assertStripePlatformAccount,
+  getStripeMode,
+  isStripeLivemode,
+} from "../stripe-mode";
 import { isDeepStrictEqual } from "node:util";
 import type { MedusaContainer } from "@medusajs/framework/types";
 import { MathBN, MedusaError } from "@medusajs/framework/utils";
@@ -6,7 +11,7 @@ import type Stripe from "stripe";
 import { parseISO } from "date-fns/parseISO";
 import { FINAL_CAPTURE_OPERATION_METADATA } from "../../modules/stripe-allocated-payment/service";
 import { financeAmount, financeOperationSchema } from "./policy";
-import { financeStripeClient } from "./provider";
+import { verifiedFinanceStripeClient } from "./provider";
 import {
   observeStripeFinanceFacts,
   providerFinanceFactSchema,
@@ -100,8 +105,9 @@ export async function recordOrderFinanceProviderFacts(
     owned_token?: string;
     recorded_at?: string;
   },
-  stripe: FinanceReader = financeStripeClient(),
+  providedStripe?: FinanceReader,
 ): Promise<FinanceReportingSources> {
+  const stripe = providedStripe ?? (await verifiedFinanceStripeClient());
   const current = await readOrderFinance(
     container,
     input.order_id,
@@ -142,7 +148,7 @@ export async function recordOrderFinanceProviderFacts(
   ]);
   if (
     intent.id !== payment.data.id ||
-    intent.livemode ||
+    !isStripeLivemode(intent.livemode) ||
     intent.currency !== "usd" ||
     intent.amount !== minorAmount(payment.amount)
   )
@@ -150,6 +156,7 @@ export async function recordOrderFinanceProviderFacts(
       MedusaError.Types.NOT_ALLOWED,
       "The provider payment differs from the native allocation.",
     );
+  assertStripePlatformAccount(account.id);
   const chargeId = objectId(intent.latest_charge);
   const recordedAt = input.recorded_at ?? new Date().toISOString();
   z.iso.datetime({ offset: true }).parse(recordedAt);
@@ -193,6 +200,7 @@ export async function recordOrderFinanceProviderFacts(
   });
   const observation: ProviderFactsObservation = chargeId
     ? await observeStripeFinanceFacts(stripe, {
+        mode: getStripeMode(),
         account_id: account.id,
         group_id: current.group.id,
         charge_id: chargeId,
@@ -320,8 +328,9 @@ async function readFinanceReportingGroupSources(
     }),
   );
   const views = initialReads.map((read) => read.view);
+  const mode = getStripeMode();
   const storedFacts = await current.journal.listFinanceProviderFacts(
-    { group_id: current.group.id },
+    { group_id: current.group.id, mode },
     { take: 10001 },
   );
   const issues: ProviderFactsObservation["coverage"]["issues"] = [];
@@ -329,11 +338,27 @@ async function readFinanceReportingGroupSources(
     issues.push({ resource: current.group.id, reason: "stored_facts_limit" });
   const facts = storedFacts.slice(0, 10000).flatMap((record) => {
     const parsed = providerFinanceFactSchema.safeParse(record.fact);
-    if (!parsed.success || parsed.data.group_id !== current.group.id) {
+    if (
+      !parsed.success ||
+      parsed.data.group_id !== current.group.id ||
+      parsed.data.mode !== mode ||
+      parsed.data.mode !== record.mode ||
+      parsed.data.account_id !== record.account_id ||
+      parsed.data.kind !== record.kind ||
+      parsed.data.key !== record.id ||
+      parsed.data.key !==
+        `stripe:${mode}:${parsed.data.account_id}:${parsed.data.kind === "authorization_release" ? "refund" : parsed.data.kind}:${parsed.data.provider_id}`
+    ) {
       issues.push({ resource: record.id, reason: "stored_fact_invalid" });
       return [];
     }
     const fact = parsed.data;
+    try {
+      assertStripePlatformAccount(fact.account_id);
+    } catch {
+      issues.push({ resource: record.id, reason: "stored_fact_invalid" });
+      return [];
+    }
     if (
       ["refund", "authorization_release"].includes(fact.kind) &&
       fact.effective_source === "stripe_object_created"
@@ -367,7 +392,17 @@ async function readFinanceReportingGroupSources(
     : [];
   const costs = storedCosts.flatMap((record) => {
     const parsed = providerFinanceCostSchema.safeParse(record.cost);
-    if (!parsed.success || !costKeys.includes(parsed.data.key)) {
+    if (
+      !parsed.success ||
+      !costKeys.includes(parsed.data.key) ||
+      parsed.data.mode !== mode ||
+      parsed.data.mode !== record.mode ||
+      parsed.data.account_id !== record.account_id ||
+      parsed.data.balance_transaction_id !== record.balance_transaction_id ||
+      parsed.data.key !== record.id ||
+      parsed.data.key !==
+        `stripe:${mode}:${parsed.data.account_id}:balance_transaction:${parsed.data.balance_transaction_id}`
+    ) {
       issues.push({ resource: record.id, reason: "stored_cost_invalid" });
       return [];
     }

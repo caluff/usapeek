@@ -1,3 +1,4 @@
+import { getStripeMode } from "../stripe-mode";
 import type { MedusaContainer } from "@medusajs/framework/types";
 import {
   ContainerRegistrationKeys,
@@ -204,8 +205,8 @@ export function buildSettlementProjection(input: {
     current.financialProblem ||
     current.hasPendingChanges ||
     MathBN.lt(
-      current.group.orders.find((order) => order.id === completion.id)
-        ?.summary?.pending_difference ?? 0,
+      current.group.orders.find((order) => order.id === completion.id)?.summary
+        ?.pending_difference ?? 0,
       0,
     ) ||
     current.state?.review_required ||
@@ -229,7 +230,7 @@ export function buildSettlementProjection(input: {
   const window = resolveFinanceReportingWindow("today", input.now);
   const result = aggregateFinanceReporting(
     {
-      mode: "test",
+      mode: getStripeMode(),
       currency_code: "usd",
       data_kind: allocation.data_kind,
       period: "today",

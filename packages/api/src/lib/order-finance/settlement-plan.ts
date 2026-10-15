@@ -1,3 +1,9 @@
+import {
+  assertStripePlatformAccount,
+  getStripeMode,
+  isStripeLivemode,
+  stripeModeSchema,
+} from "../stripe-mode";
 import type { MedusaContainer } from "@medusajs/framework/types";
 import {
   ContainerRegistrationKeys,
@@ -14,7 +20,7 @@ import { getStripeConnectConfiguration } from "../stripe-connect-configuration";
 import { financeAmount, financeOperationSchema } from "./policy";
 import {
   assertProviderBalances,
-  financeStripeClient,
+  verifiedFinanceStripeClient,
   readFinanceProvider,
 } from "./provider";
 import { readOrderFinance } from "./read";
@@ -51,7 +57,7 @@ export const settlementPlanSchema = z
     account_id: z.string().nullable(),
     destination: z.string().nullable(),
     currency_code: z.literal("usd"),
-    mode: z.literal("test"),
+    mode: stripeModeSchema,
     original_gross: money,
     original_commission: money,
     original_seller_entitlement: money,
@@ -286,7 +292,7 @@ export async function prepareOrderSettlement(
     ),
     current.finalCapture?.released_refund_ids,
   );
-  const stripe = financeStripeClient();
+  const stripe = await verifiedFinanceStripeClient();
   const chargeId =
     typeof provider.intent.latest_charge === "string"
       ? provider.intent.latest_charge
@@ -325,10 +331,11 @@ export async function prepareOrderSettlement(
       { cache: { enable: false } },
     ),
   ]);
+  assertStripePlatformAccount(platform.id);
   if (
-    balance.livemode ||
+    !isStripeLivemode(balance.livemode) ||
     charge.id !== chargeId ||
-    charge.livemode ||
+    !isStripeLivemode(charge.livemode) ||
     charge.currency !== "usd" ||
     !charge.captured ||
     !charge.paid ||
@@ -399,7 +406,7 @@ export async function prepareOrderSettlement(
       account_id: accountId,
       destination,
       currency_code: "usd",
-      mode: "test",
+      mode: getStripeMode(),
       original_gross: original.gross,
       original_commission: original.commission,
       original_seller_entitlement: original.seller_entitlement,

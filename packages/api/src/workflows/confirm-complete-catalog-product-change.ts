@@ -133,7 +133,7 @@ const prepareCompleteCatalogConfirmationStep = createStep(
         action?.action === ProductChangeActionType.UPDATE &&
         action.details?.field === "images",
     );
-    const additionsIds = new Set(
+    const additionsIds = new Set<string>(
       (change.actions ?? []).flatMap((action) => {
         if (action?.action !== ProductChangeActionType.VARIANT_UPDATE)
           return [];

@@ -3,7 +3,7 @@ import { model } from "@medusajs/framework/utils";
 export const FinanceProviderCost = model
   .define("finance_provider_cost", {
     id: model.text().primaryKey(),
-    mode: model.enum(["test"]),
+    mode: model.enum(["test", "live"]),
     account_id: model.text(),
     balance_transaction_id: model.text(),
     cost: model.json(),

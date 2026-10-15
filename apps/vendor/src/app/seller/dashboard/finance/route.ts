@@ -18,7 +18,6 @@ export async function GET(request: Request) {
             period: financePeriodInput(
               new URL(request.url).searchParams.get("period"),
             ),
-            mode: "test",
             currency_code: "usd",
             data_kind: "ordinary",
           },

@@ -6,7 +6,7 @@ export const VendorSettlementProjection = model
     seller_id: model.text(),
     group_id: model.text(),
     cart_id: model.text(),
-    mode: model.enum(["test"]).default("test"),
+    mode: model.enum(["test", "live"]).default("test"),
     currency_code: model.enum(["usd"]).default("usd"),
     data_kind: model.enum(["ordinary", "qa_fixture", "unknown"]),
     // Exact decimal in display units; SQL casts it to numeric for aggregation.
